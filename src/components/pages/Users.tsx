@@ -1086,67 +1086,67 @@ export default function Users() {
 
       {/* Main Content */}
       <div className="p-8 space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-        </div>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full md:w-64">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <SearchIcon />
+              </span>
+              <input
+                type="text"
+                placeholder="Search users"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="w-full rounded-xl border border-gray-200 bg-white px-10 py-2.5 text-sm text-gray-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              />
+            </div>
 
-        {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <SearchIcon />
+            <select
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value as "all" | UserRole)
+                setCurrentPage(1)
+              }}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+            >
+              <option value="all">All Roles</option>
+              <option value="borrower">Borrower</option>
+              <option value="lender">Lender</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as "all" | UserStatus)
+                setCurrentPage(1)
+              }}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+            >
+              <option value="all">All Status</option>
+              <option value="verified">Verified</option>
+              <option value="unverified">Unverified</option>
+              <option value="suspended">Suspended</option>
+            </select>
+
+            <button
+              onClick={() => setIsPendingModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
+            >
+              Pending Verification
+              {pendingUsers.length > 0 && (
+                <span className="bg-white text-orange-500 px-2 py-0.5 rounded-full text-xs font-bold">
+                  {pendingUsers.length}
+                </span>
+              )}
+            </button>
           </div>
-          <input
-            type="text"
-            placeholder="Search users"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setCurrentPage(1)
-            }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
         </div>
-
-        <select
-          value={roleFilter}
-          onChange={(e) => {
-            setRoleFilter(e.target.value as "all" | UserRole)
-            setCurrentPage(1)
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Roles</option>
-          <option value="borrower">Borrower</option>
-          <option value="lender">Lender</option>
-        </select>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value as "all" | UserStatus)
-            setCurrentPage(1)
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Status</option>
-          <option value="verified">Verified</option>
-          <option value="unverified">Unverified</option>
-          <option value="suspended">Suspended</option>
-        </select>
-
-        <button
-          onClick={() => setIsPendingModalOpen(true)}
-          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-        >
-          Pending Verification
-          {pendingUsers.length > 0 && (
-            <span className="bg-white text-orange-500 px-2 py-0.5 rounded-full text-xs font-bold">
-              {pendingUsers.length}
-            </span>
-          )}
-        </button>
-      </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
