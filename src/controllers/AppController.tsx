@@ -17,8 +17,8 @@ import Wallet from "../components/pages/Wallet"
 import CompletedLoans from "../components/pages/CompletedLoans"
 import Settings from "../components/pages/Settings"
 
-// Controller component (C in MVC) - coordinates auth, navigation, and which view to show.
 const AUTH_STORAGE_KEY = "avelon:isAuthenticated"
+const PAGE_STORAGE_KEY = "avelon:currentPage"
 
 export default function AppController() {
   const [authState, setAuthState] = useState<AuthState>(() => {
@@ -27,7 +27,12 @@ export default function AppController() {
     }
     return { isAuthenticated: window.localStorage.getItem(AUTH_STORAGE_KEY) === "true" }
   })
-  const [currentPage, setCurrentPage] = useState<PageId>("dashboard")
+  const [currentPage, setCurrentPage] = useState<PageId>(() => {
+    if (typeof window === "undefined") {
+      return "dashboard"
+    }
+    return (window.localStorage.getItem(PAGE_STORAGE_KEY) as PageId | null) ?? "dashboard"
+  })
 
   const handleLogin = () => {
     setAuthState({ isAuthenticated: true })
@@ -38,14 +43,17 @@ export default function AppController() {
     setAuthState({ isAuthenticated: false })
     setCurrentPage("dashboard")
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    window.localStorage.removeItem(PAGE_STORAGE_KEY)
   }
 
   const handleNavigate = (page: string) => {
-    // Narrow incoming string to known PageId; fallback to dashboard
     if (page as PageId) {
-      setCurrentPage(page as PageId)
+      const typedPage = page as PageId
+      setCurrentPage(typedPage)
+      window.localStorage.setItem(PAGE_STORAGE_KEY, typedPage)
     } else {
       setCurrentPage("dashboard")
+      window.localStorage.setItem(PAGE_STORAGE_KEY, "dashboard")
     }
   }
 
@@ -84,10 +92,8 @@ export default function AppController() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar (part of the View layer) */}
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} onLogout={handleLogout} />
 
-      {/* Main Content (View container) */}
       <div className="flex-1 overflow-auto">{renderPage()}</div>
     </div>
   )
