@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
-import adminProfile from "../assets/will.png";
+import adminProfile from "../../assets/will.png";
 
 type LoanPlan = "MICRO" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
 

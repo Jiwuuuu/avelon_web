@@ -1,10 +1,9 @@
 import { TrendingUp, Users, Activity, Clock, Zap } from "lucide-react";
-import adminProfile from "../assets/will.png";
+import adminProfile from "../../assets/will.png";
 
 export default function Dashboard() {
   return (
     <div className="bg-gray-50 min-h-full">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-end items-center">
         <div className="flex items-center gap-3">
           <img
@@ -19,7 +18,6 @@ export default function Dashboard() {
       <div className="p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">

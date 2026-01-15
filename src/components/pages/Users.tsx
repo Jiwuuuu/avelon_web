@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, Eye } from "lucide-react";
-import adminProfile from "../assets/will.png";
+import adminProfile from "../../assets/will.png";
 
 interface User {
   id: string;

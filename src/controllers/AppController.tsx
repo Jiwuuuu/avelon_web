@@ -18,15 +18,26 @@ import CompletedLoans from "../components/pages/CompletedLoans"
 import Settings from "../components/pages/Settings"
 
 // Controller component (C in MVC) - coordinates auth, navigation, and which view to show.
+const AUTH_STORAGE_KEY = "avelon:isAuthenticated"
+
 export default function AppController() {
-  const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false })
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    if (typeof window === "undefined") {
+      return { isAuthenticated: false }
+    }
+    return { isAuthenticated: window.localStorage.getItem(AUTH_STORAGE_KEY) === "true" }
+  })
   const [currentPage, setCurrentPage] = useState<PageId>("dashboard")
 
-  const handleLogin = () => setAuthState({ isAuthenticated: true })
+  const handleLogin = () => {
+    setAuthState({ isAuthenticated: true })
+    window.localStorage.setItem(AUTH_STORAGE_KEY, "true")
+  }
 
   const handleLogout = () => {
     setAuthState({ isAuthenticated: false })
     setCurrentPage("dashboard")
+    window.localStorage.removeItem(AUTH_STORAGE_KEY)
   }
 
   const handleNavigate = (page: string) => {

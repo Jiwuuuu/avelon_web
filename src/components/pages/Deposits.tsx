@@ -1,4 +1,4 @@
-import adminProfile from "../assets/will.png";
+import adminProfile from "../../assets/will.png";
 
 export default function Deposits() {
   return (

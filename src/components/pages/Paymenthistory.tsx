@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import adminProfile from "../assets/will.png";
+import adminProfile from "../../assets/will.png";
 
 type PaymentStatus = "ACTIVE" | "COMPLETED" | "DEFAULTED";
 
