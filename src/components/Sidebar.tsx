@@ -12,6 +12,7 @@ import {
   LogOut, 
   TrendingUp 
 } from "lucide-react";
+import avelonLogo from "../assets/avelon_nobg.png";
 
 interface SidebarProps {
   currentPage: string;
@@ -35,14 +36,10 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
 
   return (
     <div className="w-64 bg-white h-screen border-r border-gray-200 flex flex-col">
-      {/* Sidebar Header (same height as top bar for alignment) */}
       <div className="h-16 flex items-center justify-center border-b border-gray-200 px-4">
-        <div className="h-10 w-32 rounded-md border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
-          Logo placeholder
-        </div>
+          <img src={avelonLogo} alt="Logo" className="h-[100px]" />
       </div>
 
-      {/* Sidebar Menu */}
       <div className="flex-1 overflow-y-auto py-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -64,7 +61,6 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
         })}
       </div>
 
-      {/* Settings & Logout */}
       <div className="border-t border-gray-200 p-4">
         <button
           onClick={() => onNavigate("settings")}
