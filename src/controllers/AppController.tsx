@@ -1,21 +1,21 @@
 import { useState } from "react"
 import type { PageId, AuthState } from "../models/appModels"
 
-import Login from "../components/Login"
+import Login from "../components/pages/Login"
 import Sidebar from "../components/Sidebar"
 
 // Views (page-level components)
-import Dashboard from "../components/Dashboard"
-import Users from "../components/Users"
-import LoanRequests from "../components/LoanRequests"
-import LoanPlans from "../components/Loan Plans"
-import PaymentHistory from "../components/Paymenthistory"
-import Transaction from "../components/Transaction"
-import LoanStatus from "../components/LoanStatus"
-import Deposits from "../components/Deposits"
-import Wallet from "../components/Wallet"
-import CompletedLoans from "../components/CompletedLoans"
-import Settings from "../components/Settings"
+import Dashboard from "../components/pages/Dashboard"
+import Users from "../components/pages/Users"
+import LoanRequests from "../components/pages/LoanRequests"
+import LoanPlans from "../components/pages/Loan Plans"
+import PaymentHistory from "../components/pages/Paymenthistory"
+import Transaction from "../components/pages/Transaction"
+import LoanStatus from "../components/pages/LoanStatus"
+import Deposits from "../components/pages/Deposits"
+import Wallet from "../components/pages/Wallet"
+import CompletedLoans from "../components/pages/CompletedLoans"
+import Settings from "../components/pages/Settings"
 
 // Controller component (C in MVC) - coordinates auth, navigation, and which view to show.
 export default function AppController() {
