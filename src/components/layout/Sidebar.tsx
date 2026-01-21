@@ -10,7 +10,8 @@ import {
     CheckCircle,
     Settings,
     LogOut,
-    TrendingUp
+    TrendingUp,
+    User
 } from 'lucide-react'
 import Image from 'next/image'
 import avelonLogo from '@/assets/avelon_nobg.png'
@@ -19,9 +20,10 @@ interface SidebarProps {
     currentPage: string
     onNavigate: (page: string) => void
     onLogout: () => void
+    userName?: string
 }
 
-export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, onLogout, userName }: SidebarProps) {
     const menuItems = [
         { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
         { id: 'users', icon: Users, label: 'Users' },
@@ -50,8 +52,8 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
                             key={item.id}
                             onClick={() => onNavigate(item.id)}
                             className={`w-full flex items-center gap-3 px-6 py-3 text-left transition ${isActive
-                                    ? 'bg-orange-50 text-orange-600 border-r-4 border-orange-500'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-orange-50 text-orange-600 border-r-4 border-orange-500'
+                                : 'text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             <Icon size={20} />
@@ -62,6 +64,19 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
             </div>
 
             <div className="border-t border-gray-200 p-4">
+                {/* User info */}
+                {userName && (
+                    <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-gray-50 rounded-lg">
+                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                            <User size={16} className="text-orange-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
+                            <p className="text-xs text-gray-500">Admin</p>
+                        </div>
+                    </div>
+                )}
+
                 <button
                     onClick={() => onNavigate('settings')}
                     className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition mb-2"

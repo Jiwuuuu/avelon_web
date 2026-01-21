@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
-
-const AUTH_STORAGE_KEY = 'avelon:isAuthenticated'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function AdminLayout({
     children,
@@ -13,21 +12,18 @@ export default function AdminLayout({
 }) {
     const router = useRouter()
     const pathname = usePathname()
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+    const { user, isLoading, isAuthenticated, logout } = useAuth()
 
     useEffect(() => {
-        const authStatus = window.localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
-        setIsAuthenticated(authStatus)
-
-        if (!authStatus) {
+        if (!isLoading && !isAuthenticated) {
             router.push('/login')
         }
-    }, [router])
+    }, [isLoading, isAuthenticated, router])
 
-    const handleLogout = () => {
-        window.localStorage.removeItem(AUTH_STORAGE_KEY)
-        setIsAuthenticated(false)
-        router.push('/login')
+    const handleLogout = async () => {
+        // Clear auth cookie
+        document.cookie = 'avelon:authenticated=; path=/; max-age=0'
+        await logout()
     }
 
     // Get current page from pathname
@@ -46,7 +42,7 @@ export default function AdminLayout({
     }
 
     // Show loading while checking auth
-    if (isAuthenticated === null) {
+    if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-100">
                 <div className="text-gray-500">Loading...</div>
@@ -65,6 +61,7 @@ export default function AdminLayout({
                 currentPage={getCurrentPage()}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
+                userName={user?.name || user?.email || 'Admin'}
             />
             <div className="flex-1 overflow-auto">
                 {children}
