@@ -1,4 +1,5 @@
-import { TrendingUp, Users, Activity, Clock, Zap } from "lucide-react";
+import Image from 'next/image';
+import { TrendingUp, Users, Activity, Clock, Zap, DollarSign, BarChart3, AlertTriangle } from "lucide-react";
 import adminProfile from "../../assets/will.png";
 
 export default function Dashboard() {
@@ -6,10 +7,13 @@ export default function Dashboard() {
     <div className="bg-gray-50 min-h-full">
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-end items-center">
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src={adminProfile}
             alt="Admin"
-            className="w-10 h-10 rounded-full object-cover"
+            width={40}
+            height={40}
+            className="rounded-full object-cover"
+            priority
           />
           <span className="text-sm font-medium">Admin</span>
         </div>
@@ -29,7 +33,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold text-gray-900">$6.9M</div>
                 <div className="text-green-500 text-sm font-medium mt-1">↑12.5%</div>
               </div>
-              <div className="text-yellow-500 text-2xl">💰</div>
+              <div className="text-yellow-500"><DollarSign size={24} /></div>
             </div>
           </div>
 
@@ -43,7 +47,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold text-gray-900">6,6969</div>
                 <div className="text-green-500 text-sm font-medium mt-1">↑6.9%</div>
               </div>
-              <div className="text-blue-500 text-2xl">👥</div>
+              <div className="text-blue-500"><Users size={24} /></div>
             </div>
           </div>
 
@@ -57,7 +61,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold text-gray-900">8.9</div>
                 <div className="text-green-500 text-sm font-medium mt-1">↑8.1%</div>
               </div>
-              <div className="text-purple-500 text-2xl">📊</div>
+              <div className="text-purple-500"><BarChart3 size={24} /></div>
             </div>
           </div>
 
@@ -71,7 +75,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold text-gray-900">20</div>
                 <div className="text-red-500 text-sm font-medium mt-1">Requires Attention</div>
               </div>
-              <div className="text-orange-500 text-2xl">⚠️</div>
+              <div className="text-orange-500"><AlertTriangle size={24} /></div>
             </div>
           </div>
         </div>

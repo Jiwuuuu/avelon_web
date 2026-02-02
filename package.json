@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@avelon_capstone/types": "^1.0.0",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
     "ethers": "^6.16.0",
     "lucide-react": "^0.562.0",
     "next": "^16.0.0",
