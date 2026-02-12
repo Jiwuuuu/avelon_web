@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 
 const LoanPlansContent = dynamic(
-    () => import('@/components/pages/Loan Plans'),
+    () => import('@/components/pages/LoanPlans'),
     { ssr: false }
 )
 
