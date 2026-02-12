@@ -57,7 +57,7 @@ export default function LoanRequests() {
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-end items-center">
         <div className="flex items-center gap-3">
           <img
-            src={adminProfile}
+            src={adminProfile.src}
             alt="Admin"
             className="w-10 h-10 rounded-full object-cover"
           />

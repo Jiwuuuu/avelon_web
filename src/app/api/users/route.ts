@@ -1,90 +1,67 @@
-import { NextResponse } from 'next/server'
+/**
+ * /api/users
+ * Proxies to: /api/v1/admin/users
+ * Admin user management — list, view, update status.
+ */
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || ''
-
+/**
+ * GET /api/users
+ * List all users (admin)
+ * Backend: GET /api/v1/admin/users?page=&limit=&status=
+ */
 export async function GET(request: Request) {
-  try {
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/users`, {
-        headers: { accept: 'application/json', ...(Object.fromEntries(request.headers)) },
-        method: 'GET',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return NextResponse.json({ success: true, data })
-      }
-    }
-  } catch (err) {}
+  const { searchParams } = new URL(request.url)
+  const query = searchParams.toString()
 
-  const mock = [
-    { id: 'user_1', name: 'Will', email: 'will@example.com', role: 'admin' },
-    { id: 'user_2', name: 'Jane Doe', email: 'jane@example.com', role: 'user' },
-  ]
+  const result = await proxyToBackend({
+    backendPath: '/api/v1/admin/users',
+    request,
+    query,
+  })
 
-  return NextResponse.json({ success: true, data: mock })
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(request.headers)) },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      return NextResponse.json({ success: res.ok, data })
-    }
-
-    const created = { id: `user_${Date.now()}`, ...body }
-    return NextResponse.json({ success: true, data: created })
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: (err && err.message) || 'Unknown error' }, { status: 500 })
+  if (result?.success) {
+    return jsonResponse(result.data)
   }
+
+  // Mock fallback
+  const mock = {
+    users: [
+      { id: 'user_1', name: 'Will Garcia', email: 'will@example.com', role: 'admin', status: 'active' },
+      { id: 'user_2', name: 'Jane Doe', email: 'jane@example.com', role: 'user', status: 'verified' },
+    ],
+    meta: { total: 2, page: 1, limit: 20, totalPages: 1 },
+  }
+
+  return jsonResponse(mock)
 }
 
+/**
+ * PUT /api/users
+ * Update user status (admin)
+ * Backend: PUT /api/v1/admin/users/:id/status
+ * Body: { id: string, status: string }
+ */
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    const id = (body && (body.id || body.userId)) || null
-    if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 })
+    const id = body?.id || body?.userId
+    if (!id) return errorResponse('Missing user id', 400)
 
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(request.headers)) },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      return NextResponse.json({ success: res.ok, data })
+    const result = await proxyToBackend({
+      backendPath: `/api/v1/admin/users/${id}/status`,
+      request,
+      method: 'PUT',
+      body: { status: body.status },
+    })
+
+    if (result) {
+      return jsonResponse(result.data, result.success, result.status, result.error)
     }
 
-    const updated = { id, ...body }
-    return NextResponse.json({ success: true, data: updated })
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: (err && err.message) || 'Unknown error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const body = await request.json().catch(() => ({}))
-    const id = (body && (body.id || body.userId)) || null
-    if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 })
-
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(request.headers)) },
-      })
-      if (res.ok) return NextResponse.json({ success: true })
-      const data = await res.json()
-      return NextResponse.json({ success: false, error: data })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: (err && err.message) || 'Unknown error' }, { status: 500 })
+    return jsonResponse({ id, status: body.status, message: 'User status updated' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return errorResponse(message)
   }
 }

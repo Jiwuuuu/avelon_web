@@ -1,45 +1,52 @@
-import { NextResponse } from 'next/server'
+/**
+ * /api/payment-history
+ * Proxies to: /api/v1/loans/:id/transactions
+ * View payment history for loans.
+ *
+ * Query params:
+ *   - loanId: specific loan to get payments for
+ *   - Without loanId: returns all loans (caller should aggregate)
+ */
+import { proxyToBackend, jsonResponse } from '../_lib/proxy'
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || ''
-
+/**
+ * GET /api/payment-history?loanId=xxx
+ * Get payment/transaction history for a specific loan
+ * Backend: GET /api/v1/loans/:id/transactions
+ *          GET /api/v1/loans (if no loanId, returns all loans)
+ */
 export async function GET(request: Request) {
-  try {
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/payment-history`, {
-        headers: { accept: 'application/json', ...(Object.fromEntries(request.headers)) },
-        method: 'GET',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return NextResponse.json({ success: true, data })
-      }
-    }
-  } catch (err) {}
+  const { searchParams } = new URL(request.url)
+  const loanId = searchParams.get('loanId')
 
+  // If a specific loan ID is provided, get its transactions
+  if (loanId) {
+    const result = await proxyToBackend({
+      backendPath: `/api/v1/loans/${loanId}/transactions`,
+      request,
+    })
+
+    if (result?.success) {
+      return jsonResponse(result.data)
+    }
+  } else {
+    // No specific loan — get all loans (admin view)
+    const result = await proxyToBackend({
+      backendPath: '/api/v1/admin/loans',
+      request,
+      query: searchParams.toString(),
+    })
+
+    if (result?.success) {
+      return jsonResponse(result.data)
+    }
+  }
+
+  // Mock fallback
   const mock = [
-    { id: 'pm_1', loanId: 'loan_1', amount: 500, dueDate: '2026-02-15', status: 'paid', date: '2026-02-10' },
-    { id: 'pm_2', loanId: 'loan_2', amount: 750, dueDate: '2026-02-20', status: 'pending', date: '2026-02-11' },
+    { id: 'pm_1', loanId: 'loan_1', amount: '500', dueDate: '2026-02-15', status: 'paid', paidDate: '2026-02-10' },
+    { id: 'pm_2', loanId: 'loan_2', amount: '750', dueDate: '2026-02-20', status: 'pending', paidDate: null },
   ]
 
-  return NextResponse.json({ success: true, data: mock })
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/payment-history`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(request.headers)) },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      return NextResponse.json({ success: res.ok, data })
-    }
-
-    const created = { id: `pm_${Date.now()}`, ...body, status: 'pending', date: new Date().toISOString().split('T')[0] }
-    return NextResponse.json({ success: true, data: created })
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: (err && err.message) || 'Unknown error' }, { status: 500 })
-  }
+  return jsonResponse(mock)
 }

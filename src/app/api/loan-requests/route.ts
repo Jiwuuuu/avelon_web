@@ -1,45 +1,63 @@
-import { NextResponse } from 'next/server'
+/**
+ * /api/loan-requests
+ * Proxies to: /api/v1/loans
+ * Create and list loan requests.
+ */
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || ''
-
+/**
+ * GET /api/loan-requests
+ * List loans (user's own loans)
+ * Backend: GET /api/v1/loans
+ */
 export async function GET(request: Request) {
-  try {
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/loan-requests`, {
-        headers: { accept: 'application/json', ...(Object.fromEntries(request.headers)) },
-        method: 'GET',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return NextResponse.json({ success: true, data })
-      }
-    }
-  } catch (err) {}
+  const { searchParams } = new URL(request.url)
+  const query = searchParams.toString()
 
+  const result = await proxyToBackend({
+    backendPath: '/api/v1/loans',
+    request,
+    query,
+  })
+
+  if (result?.success) {
+    return jsonResponse(result.data)
+  }
+
+  // Mock fallback
   const mock = [
-    { id: 'lr_1', user: 'user_1', amount: 5000, status: 'pending' },
-    { id: 'lr_2', user: 'user_2', amount: 15000, status: 'approved' },
+    { id: 'lr_1', userId: 'user_1', amount: '5000', planId: 'basic', status: 'pending', createdAt: '2026-02-10' },
+    { id: 'lr_2', userId: 'user_2', amount: '15000', planId: 'standard', status: 'approved', createdAt: '2026-02-08' },
   ]
 
-  return NextResponse.json({ success: true, data: mock })
+  return jsonResponse(mock)
 }
 
+/**
+ * POST /api/loan-requests
+ * Create a new loan request
+ * Backend: POST /api/v1/loans
+ * Body: { planId, collateralAmount, walletId }
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/loan-requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(request.headers)) },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      return NextResponse.json({ success: res.ok, data })
+
+    const result = await proxyToBackend({
+      backendPath: '/api/v1/loans',
+      request,
+      method: 'POST',
+      body,
+    })
+
+    if (result) {
+      return jsonResponse(result.data, result.success, result.status, result.error)
     }
 
     const created = { id: `lr_${Date.now()}`, ...body, status: 'pending' }
-    return NextResponse.json({ success: true, data: created })
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: (err && err.message) || 'Unknown error' }, { status: 500 })
+    return jsonResponse(created)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return errorResponse(message)
   }
 }

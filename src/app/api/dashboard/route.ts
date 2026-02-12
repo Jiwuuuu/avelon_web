@@ -1,37 +1,43 @@
-import { NextResponse } from 'next/server'
-
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || ''
+/**
+ * GET /api/dashboard
+ * Proxies to: GET /api/v1/admin/analytics
+ * Returns platform-wide dashboard metrics for the admin panel.
+ */
+import { proxyToBackend, jsonResponse } from '../_lib/proxy'
 
 export async function GET(request: Request) {
-  try {
-    // If a backend URL is configured, try to proxy the request
-    if (BACKEND) {
-      const res = await fetch(`${BACKEND}/api/v1/dashboard/metrics`, {
-        headers: { accept: 'application/json', ...(Object.fromEntries(request.headers)) },
-        method: 'GET',
-      })
+  const result = await proxyToBackend({
+    backendPath: '/api/v1/admin/analytics',
+    request,
+  })
 
-      if (res.ok) {
-        const data = await res.json()
-        return NextResponse.json({ success: true, data })
-      }
-      // fallthrough to mock data on non-ok response
-    }
-  } catch (err) {
-    // ignore and return mock data
+  if (result?.success) {
+    return jsonResponse(result.data)
   }
 
-  // Mock response (safe fallback)
+  // Mock fallback — used when backend is unavailable
   const mock = {
-    totalLoans: 6900000,
-    totalLoansLabel: '$6.9M',
-    totalLoansChange: 12.5,
-    activeUsers: 66969,
-    activeUsersChange: 6.9,
-    aiRiskAvg: 8.9,
-    aiRiskChange: 8.1,
-    pendingReviews: 20,
+    users: {
+      total: 150,
+      verified: 120,
+      approved: 95,
+      pending: 30,
+    },
+    loans: {
+      total: 85,
+      active: 42,
+      repaid: 38,
+      liquidated: 5,
+      totalVolume: '2500000',
+    },
+    treasury: {
+      balance: '500000',
+      totalLent: '1800000',
+      totalInterestEarned: '125000',
+      totalFees: '18500',
+    },
+    recentActivity: [],
   }
 
-  return NextResponse.json({ success: true, data: mock })
+  return jsonResponse(mock)
 }

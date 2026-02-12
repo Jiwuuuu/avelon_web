@@ -22,7 +22,7 @@ export default function Login({ onLogin }: LoginProps) {
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-md rounded-3xl shadow-lg p-8 border border-gray-200">
         <div className="flex flex-col items-center mb-6">
-          <img src={avelonLogo} alt="Logo" className="h-[125px] mb-4" />
+          <img src={avelonLogo.src} alt="Logo" className="h-[125px] mb-4" />
           <p className="text-center text-sm text-gray-500">
             Admin Panel Login
           </p>
