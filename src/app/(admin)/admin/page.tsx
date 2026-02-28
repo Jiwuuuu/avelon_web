@@ -1,26 +1,40 @@
 'use client'
 
-import { TrendingUp, Users, Activity, Clock, Zap, DollarSign, BarChart3, AlertTriangle } from 'lucide-react'
-import Image from 'next/image'
-import adminProfile from '@/assets/will.png'
+import { TrendingUp, Users, Activity, Zap, DollarSign, BarChart3 } from 'lucide-react'
+import { useCachedFetch } from '@/lib/use-cached-fetch'
+import { useRouter } from 'next/navigation'
+import { DashboardSkeleton } from '@/components/skeletons'
+
+type AnalyticsData = {
+    users: { total: number; verified: number; approved: number; pending: number }
+    loans: { total: number; active: number; repaid: number; liquidated: number; totalVolume: number }
+    treasury: { balance: number; totalLent: number; totalInterestEarned: number; totalFees: number }
+    recentActivity: { type: string; message: string; createdAt: string }[]
+}
 
 export default function AdminDashboardPage() {
-    return (
-        <div className="bg-gray-50 min-h-full">
-            <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-end items-center">
-                <div className="flex items-center gap-3">
-                    <Image
-                        src={adminProfile.src}
-                        alt="Admin"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        priority
-                    />
-                    <span className="text-sm font-medium">Admin</span>
+    const { data: analytics, loading, error, refresh } = useCachedFetch<AnalyticsData>('/api/v1/admin/analytics')
+    const router = useRouter()
+
+    if (loading) return <DashboardSkeleton />
+
+    if (error) {
+        return (
+            <div className="bg-gray-50 min-h-full p-8">
+                <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-center">
+                    <p className="text-red-700 font-medium">{error}</p>
+                    <button onClick={refresh} className="mt-3 text-sm text-red-600 hover:text-red-800 font-semibold">Retry</button>
                 </div>
             </div>
+        )
+    }
 
+    if (!analytics) return null
+    const data = analytics
+    const totalLoanVolume = Number(data.loans.totalVolume ?? 0)
+
+    return (
+        <div className="bg-gray-50 min-h-full">
             <div className="p-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
 
@@ -28,12 +42,12 @@ export default function AdminDashboardPage() {
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
                             <TrendingUp size={14} />
-                            <span>TOTAL LOANS</span>
+                            <span>TOTAL LOAN VOLUME</span>
                         </div>
                         <div className="flex items-end justify-between">
                             <div>
-                                <div className="text-3xl font-bold text-gray-900">$6.9M</div>
-                                <div className="text-green-500 text-sm font-medium mt-1">↑12.5%</div>
+                                <div className="text-3xl font-bold text-gray-900">{totalLoanVolume.toFixed(2)} ETH</div>
+                                <div className="text-gray-500 text-sm mt-1">{data.loans.total} loans</div>
                             </div>
                             <div className="text-yellow-500"><DollarSign size={24} /></div>
                         </div>
@@ -42,12 +56,12 @@ export default function AdminDashboardPage() {
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
                             <Users size={14} />
-                            <span>ACTIVE USERS</span>
+                            <span>USERS</span>
                         </div>
                         <div className="flex items-end justify-between">
                             <div>
-                                <div className="text-3xl font-bold text-gray-900">6,6969</div>
-                                <div className="text-green-500 text-sm font-medium mt-1">↑6.9%</div>
+                                <div className="text-3xl font-bold text-gray-900">{data.users.total.toLocaleString()}</div>
+                                <div className="text-green-500 text-sm font-medium mt-1">{data.users.approved} approved</div>
                             </div>
                             <div className="text-blue-500"><Users size={24} /></div>
                         </div>
@@ -56,12 +70,12 @@ export default function AdminDashboardPage() {
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
                             <Activity size={14} />
-                            <span>AI RISK SCORE AVG</span>
+                            <span>ACTIVE LOANS</span>
                         </div>
                         <div className="flex items-end justify-between">
                             <div>
-                                <div className="text-3xl font-bold text-gray-900">8.9</div>
-                                <div className="text-green-500 text-sm font-medium mt-1">↑8.1%</div>
+                                <div className="text-3xl font-bold text-gray-900">{data.loans.active}</div>
+                                <div className="text-gray-500 text-sm mt-1">{data.loans.repaid} repaid</div>
                             </div>
                             <div className="text-purple-500"><BarChart3 size={24} /></div>
                         </div>
@@ -69,167 +83,17 @@ export default function AdminDashboardPage() {
 
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                         <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
-                            <Clock size={14} />
-                            <span>PENDING REVIEWS</span>
+                            <DollarSign size={14} />
+                            <span>TREASURY</span>
                         </div>
                         <div className="flex items-end justify-between">
                             <div>
-                                <div className="text-3xl font-bold text-gray-900">20</div>
-                                <div className="text-red-500 text-sm font-medium mt-1">Requires Attention</div>
-                            </div>
-                            <div className="text-orange-500"><AlertTriangle size={24} /></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    {/* Loan Volume Trends */}
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="text-lg font-semibold">Loan Volume Trends</h3>
-                                <p className="text-xs text-gray-400 mt-1">Past 7 days (Millions)</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                                <span className="text-xs text-gray-500">Volume</span>
-                            </div>
-                        </div>
-                        <div className="relative h-72">
-                            <svg className="w-full h-full" viewBox="0 0 500 280" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="gradient1" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
-                                        <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-
-                                {/* Grid Lines */}
-                                <line x1="50" y1="40" x2="50" y2="240" stroke="#e5e7eb" strokeWidth="1" />
-                                <line x1="50" y1="240" x2="480" y2="240" stroke="#e5e7eb" strokeWidth="1" />
-
-                                {/* Grid horizontal lines */}
-                                <line x1="50" y1="80" x2="480" y2="80" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4" />
-                                <line x1="50" y1="120" x2="480" y2="120" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4" />
-                                <line x1="50" y1="160" x2="480" y2="160" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4" />
-                                <line x1="50" y1="200" x2="480" y2="200" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4" />
-
-                                {/* Axis Labels Y */}
-                                <text x="40" y="245" fontSize="11" fill="#9ca3af" textAnchor="end">$0</text>
-                                <text x="40" y="205" fontSize="11" fill="#9ca3af" textAnchor="end">$2M</text>
-                                <text x="40" y="165" fontSize="11" fill="#9ca3af" textAnchor="end">$4M</text>
-                                <text x="40" y="125" fontSize="11" fill="#9ca3af" textAnchor="end">$6M</text>
-                                <text x="40" y="85" fontSize="11" fill="#9ca3af" textAnchor="end">$8M</text>
-
-                                {/* Axis Labels X */}
-                                <text x="70" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Mon</text>
-                                <text x="140" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Tue</text>
-                                <text x="210" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Wed</text>
-                                <text x="280" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Thu</text>
-                                <text x="350" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Fri</text>
-                                <text x="420" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Sat</text>
-                                <text x="460" y="260" fontSize="11" fill="#9ca3af" textAnchor="middle">Sun</text>
-
-                                {/* Area fill */}
-                                <polygon
-                                    points="70,140 140,100 210,70 280,110 350,50 420,35 460,30 480,240 70,240"
-                                    fill="url(#gradient1)"
-                                />
-
-                                {/* Line */}
-                                <polyline
-                                    fill="none"
-                                    stroke="#f97316"
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    points="70,140 140,100 210,70 280,110 350,50 420,35 460,30"
-                                />
-
-                                {/* Data points */}
-                                <circle cx="70" cy="140" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="140" cy="100" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="210" cy="70" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="280" cy="110" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="350" cy="50" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="420" cy="35" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="460" cy="30" r="5" fill="white" stroke="#f97316" strokeWidth="2" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    {/* Ethereum Volatility Prediction */}
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                        <h3 className="text-lg font-semibold mb-6">Ethereum Volatility Prediction</h3>
-
-                        {/* Forecast Info */}
-                        <div className="bg-orange-50 rounded-lg p-5 mb-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <span className="text-xs text-gray-500 font-semibold block">FORECAST</span>
-                                    <span className="text-2xl font-bold text-gray-900">Next 7 Days</span>
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-xs text-gray-500 font-semibold block mb-2">VOLATILITY</span>
-                                    <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full inline-block">HIGH</span>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-xs text-gray-500 font-semibold block">CONFIDENCE</span>
-                                    <span className="text-2xl font-bold text-green-500">87.3%</span>
+                                <div className="text-3xl font-bold text-gray-900">{Number(data.treasury.balance).toFixed(2)} ETH</div>
+                                <div className="text-gray-500 text-sm mt-1">
+                                    {Number(data.treasury.totalInterestEarned).toFixed(4)} interest earned
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Volatility Trend Chart */}
-                        <div>
-                            <p className="text-xs text-gray-500 font-medium mb-3">Volatility Trend (Next 7 Days)</p>
-                            <svg className="w-full h-40" viewBox="0 0 500 120" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="volGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor="#f97316" stopOpacity="0.15" />
-                                        <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-
-                                {/* Grid lines */}
-                                <line x1="40" y1="20" x2="40" y2="100" stroke="#e5e7eb" strokeWidth="1" />
-                                <line x1="40" y1="100" x2="500" y2="100" stroke="#e5e7eb" strokeWidth="1" />
-
-                                {/* Horizontal grid */}
-                                <line x1="40" y1="45" x2="500" y2="45" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="3" />
-                                <line x1="40" y1="72.5" x2="500" y2="72.5" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="3" />
-
-                                {/* Y axis labels */}
-                                <text x="35" y="105" fontSize="10" fill="#9ca3af" textAnchor="end">Low</text>
-                                <text x="35" y="78" fontSize="10" fill="#9ca3af" textAnchor="end">Mid</text>
-                                <text x="35" y="25" fontSize="10" fill="#9ca3af" textAnchor="end">High</text>
-
-                                {/* Area fill */}
-                                <polygon
-                                    points="50,75 130,70 210,55 290,50 370,48 450,50 480,100 50,100"
-                                    fill="url(#volGradient)"
-                                />
-
-                                {/* Line */}
-                                <polyline
-                                    fill="none"
-                                    stroke="#f97316"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    points="50,75 130,70 210,55 290,50 370,48 450,50 480,52"
-                                />
-
-                                {/* Data points */}
-                                <circle cx="50" cy="75" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="130" cy="70" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="210" cy="55" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="290" cy="50" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="370" cy="48" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="450" cy="50" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                                <circle cx="480" cy="52" r="4" fill="white" stroke="#f97316" strokeWidth="2" />
-                            </svg>
+                            <div className="text-orange-500"><TrendingUp size={24} /></div>
                         </div>
                     </div>
                 </div>
@@ -240,33 +104,24 @@ export default function AdminDashboardPage() {
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                         <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm">Loan #69696 Approved</div>
-                                    <div className="text-xs text-gray-500">5 minutes ago</div>
+                            {(data.recentActivity ?? []).length === 0 && (
+                                <p className="text-sm text-gray-500">No recent activity.</p>
+                            )}
+                            {(data.recentActivity ?? []).slice(0, 8).map((event, idx) => (
+                                <div key={idx} className="flex items-start gap-3">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2" />
+                                    <div className="flex-1">
+                                        <div className="font-medium text-sm">{event.message}</div>
+                                        <div className="text-xs text-gray-500">{new Date(event.createdAt).toLocaleString()}</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm">New User Registration</div>
-                                    <div className="text-xs text-gray-500">15 minutes ago</div>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm">AI Model Updated</div>
-                                    <div className="text-xs text-gray-500">1 hour ago</div>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* System Status & Quick Actions */}
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                        <h3 className="text-lg font-semibold mb-4">System Status</h3>
+                        <h3 className="text-lg font-semibold mb-4">Overview</h3>
                         <div className="space-y-3 mb-6">
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                                 <div className="flex items-center gap-2">
@@ -278,18 +133,32 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                                 <div className="flex items-center gap-2">
                                     <Activity className="text-green-500" size={18} />
-                                    <span className="text-sm font-medium">AI Risk Models</span>
+                                    <span className="text-sm font-medium">AI KYC Verification</span>
                                 </div>
                                 <span className="text-xs text-green-600 font-medium">ACTIVE</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
+                                <span className="text-sm">Pending KYC: <strong>{data.users.pending}</strong></span>
+                                <span className="text-sm">Verified Users: <strong>{data.users.verified}</strong></span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
+                                <span className="text-sm">Liquidated: <strong>{data.loans.liquidated}</strong></span>
+                                <span className="text-sm">Fees Earned: <strong>{Number(data.treasury.totalFees).toFixed(4)} ETH</strong></span>
                             </div>
                         </div>
                         <div>
                             <h4 className="text-sm font-semibold mb-3">Quick Actions</h4>
-                            <button className="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-2 px-4 rounded-lg mb-2 transition">
-                                Review Pending Loans (23)
+                            <button
+                                onClick={() => router.push('/admin/loan-requests')}
+                                className="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-2 px-4 rounded-lg mb-2 transition"
+                            >
+                                View Active Loans ({data.loans.active})
                             </button>
-                            <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg transition">
-                                Configure AI Models
+                            <button
+                                onClick={() => router.push('/admin/users')}
+                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg transition"
+                            >
+                                Manage Users ({data.users.total})
                             </button>
                         </div>
                     </div>

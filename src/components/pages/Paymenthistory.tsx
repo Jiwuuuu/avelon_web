@@ -1,173 +1,63 @@
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import adminProfile from "../../assets/will.png";
+"use client"
 
-type PaymentStatus = "ACTIVE" | "COMPLETED" | "DEFAULTED";
+import { useMemo, useState } from "react"
+import { Search } from "lucide-react"
+import { LoanStatus, type Loan } from "@avelon_capstone/types"
+import { useCachedFetch } from "@/lib/use-cached-fetch"
+import { TablePageSkeleton } from "@/components/skeletons"
 
-type Payment = {
-  id: string;
-  borrowerName: string;
-  borrowerEmail: string;
-  avatarColor: string;
-  amount: number;
-  plan: "MICRO" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
-  term: string;
-  termNote: string;
-  status: PaymentStatus;
-  date: string;
-};
-
-const payments: Payment[] = [
-  {
-    id: "#LOAN-4546",
-    borrowerName: "Will Anthony Bartilo",
-    borrowerEmail: "will@ghostmail.com",
-    avatarColor: "bg-green-500",
-    amount: 45000,
-    plan: "PROFESSIONAL",
-    term: "24 months",
-    termNote: "18 remaining",
-    status: "ACTIVE",
-    date: "Jan 5, 2024",
-  },
-  {
-    id: "#LOAN-8080",
-    borrowerName: "Cecilia Francisco",
-    borrowerEmail: "francisco@lettermail.com",
-    avatarColor: "bg-blue-500",
-    amount: 15000,
-    plan: "STARTER",
-    term: "18 months",
-    termNote: "Completed",
-    status: "COMPLETED",
-    date: "Jun 4, 2025",
-  },
-  {
-    id: "#LOAN-8950",
-    borrowerName: "Arron Paul Villacorte",
-    borrowerEmail: "arron@brightmail.com",
-    avatarColor: "bg-emerald-500",
-    amount: 3500,
-    plan: "MICRO",
-    term: "12 months",
-    termNote: "4 remaining",
-    status: "ACTIVE",
-    date: "Jul 6, 2025",
-  },
-  {
-    id: "#LOAN-8970",
-    borrowerName: "Justin Bieber Caramongan",
-    borrowerEmail: "bieber@lendingboard.com",
-    avatarColor: "bg-sky-500",
-    amount: 75500,
-    plan: "PROFESSIONAL",
-    term: "18 months",
-    termNote: "Delinquent",
-    status: "DEFAULTED",
-    date: "Sept 5, 2025",
-  },
-  {
-    id: "#LOAN-8880",
-    borrowerName: "Justin Caugdan",
-    borrowerEmail: "justin@stablecapital.com",
-    avatarColor: "bg-cyan-500",
-    amount: 150500,
-    plan: "ENTERPRISE",
-    term: "36 months",
-    termNote: "29 remaining",
-    status: "COMPLETED",
-    date: "Dec 14, 2025",
-  },
-];
-
-function StatusBadge({ status }: { status: PaymentStatus }) {
-  const classes: Record<PaymentStatus, string> = {
-    ACTIVE: "bg-green-100 text-green-700",
-    COMPLETED: "bg-blue-100 text-blue-700",
-    DEFAULTED: "bg-red-100 text-red-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${classes[status]}`}
-    >
-      {status}
-    </span>
-  );
+// ── Badges ─────────────────────────────────────────────────
+const statusStyles: Record<LoanStatus, string> = {
+  [LoanStatus.PENDING_COLLATERAL]: "bg-yellow-100 text-yellow-700",
+  [LoanStatus.COLLATERAL_DEPOSITED]: "bg-blue-100 text-blue-700",
+  [LoanStatus.ACTIVE]: "bg-green-100 text-green-700",
+  [LoanStatus.REPAID]: "bg-emerald-100 text-emerald-700",
+  [LoanStatus.LIQUIDATED]: "bg-red-100 text-red-700",
+  [LoanStatus.CANCELLED]: "bg-gray-100 text-gray-700",
+  [LoanStatus.EXPIRED]: "bg-gray-200 text-gray-600",
 }
 
-function PlanBadge({
-  plan,
-}: {
-  plan: Payment["plan"];
-}) {
-  const classes: Record<Payment["plan"], string> = {
-    MICRO: "bg-green-100 text-green-700",
-    STARTER: "bg-sky-100 text-sky-700",
-    PROFESSIONAL: "bg-indigo-100 text-indigo-700",
-    ENTERPRISE: "bg-orange-100 text-orange-700",
-  };
+function StatusBadge({ status }: { status: LoanStatus }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${classes[plan]}`}
-    >
-      {plan}
+    <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status]}`}>
+      {status.replace(/_/g, " ")}
     </span>
-  );
+  )
 }
-
-const formatMoney = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
 
 export default function PaymentHistory() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<PaymentStatus | "ALL">(
-    "ALL"
-  );
+  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans")
+  const loans = loansData?.loans ?? []
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"ALL" | LoanStatus>("ALL")
 
   const filtered = useMemo(
     () =>
-      payments.filter(
-        (p) =>
-          (p.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.borrowerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchTerm.toLowerCase())) &&
-          (statusFilter === "ALL" || p.status === statusFilter)
-      ),
-    [searchTerm, statusFilter]
-  );
+      loans.filter((loan) => {
+        const matchesSearch =
+          searchTerm === "" ||
+          loan.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          loan.userId.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesStatus = statusFilter === "ALL" || loan.status === statusFilter
+        return matchesSearch && matchesStatus
+      }),
+    [loans, searchTerm, statusFilter],
+  )
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-end items-center">
-        <div className="flex items-center gap-3">
-          <img
-            src={adminProfile.src}
-            alt="Admin"
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <span className="text-sm font-medium">Admin</span>
-        </div>
-      </div>
-
+    <div className="bg-gray-50 min-h-full">
       <div className="p-8">
-        {/* Page Title */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Loan History</h1>
         </div>
 
-        {/* Search + Status Filter */}
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-300 w-72">
+            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 w-72">
               <Search size={18} className="text-gray-400" />
               <input
                 type="text"
-                placeholder="Search loans or borrowers"
+                placeholder="Search by loan ID or user"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-white border-0 text-sm outline-none w-full"
@@ -176,124 +66,62 @@ export default function PaymentHistory() {
 
             <select
               value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as PaymentStatus | "ALL")
-              }
-              className="bg-white text-sm px-3 py-2 rounded border border-gray-300 outline-none"
+              onChange={(e) => setStatusFilter(e.target.value as "ALL" | LoanStatus)}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
             >
               <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="DEFAULTED">Defaulted</option>
+              {Object.values(LoanStatus).map((s) => (
+                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+              ))}
             </select>
           </div>
         </div>
 
-        {/* Loan History Table */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Loan ID
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Borrower
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Plan
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Term
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
+        {loading && <TablePageSkeleton columns={7} />}
 
-            <tbody>
-              {filtered.map((payment) => (
-                <tr
-                  key={payment.id}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition"
-                >
-                  <td className="px-4 py-4 text-xs font-medium text-gray-700">
-                    {payment.id}
-                  </td>
+        {error && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-center">
+            <p className="text-red-700 font-medium">{error}</p>
+            <button onClick={refresh} className="mt-3 text-sm text-red-600 hover:text-red-800 font-semibold">Retry</button>
+          </div>
+        )}
 
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full ${payment.avatarColor}`}
-                      />
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          {payment.borrowerName}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {payment.borrowerEmail}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 text-sm font-semibold text-gray-900">
-                    {formatMoney(payment.amount)}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <PlanBadge plan={payment.plan} />
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <div className="text-xs font-medium text-gray-900">
-                      {payment.term}
-                    </div>
-                    <div className="text-[11px] text-gray-400">
-                      {payment.termNote}
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <StatusBadge status={payment.status} />
-                  </td>
-
-                  <td className="px-4 py-4 text-xs text-gray-500">
-                    {payment.date}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <button className="text-xs font-semibold text-orange-500 hover:text-orange-600">
-                      View Details →
-                    </button>
-                  </td>
+        {!loading && !error && (
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 overflow-x-auto">
+            <table className="w-full min-w-max">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Loan ID</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Principal</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Interest</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Duration</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Owed</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Due Date</th>
                 </tr>
-              ))}
-
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="text-center py-12 text-gray-500 text-sm"
-                  >
-                    No payments found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((loan) => (
+                  <tr key={loan.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                    <td className="px-4 py-4 text-xs font-mono text-gray-700">{loan.id.slice(0, 10)}...</td>
+                    <td className="px-4 py-4 text-sm font-semibold text-gray-900">{loan.principal} ETH</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{loan.interestRate}%</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{loan.duration} days</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{(loan.principalOwed + loan.interestOwed + loan.feesOwed).toFixed(4)} ETH</td>
+                    <td className="px-4 py-4"><StatusBadge status={loan.status} /></td>
+                    <td className="px-4 py-4 text-xs text-gray-500">{loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : "—"}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-gray-500 text-sm">No loans found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }
