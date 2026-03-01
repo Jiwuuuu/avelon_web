@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback, Fragment } from "react"
 import {
   ScrollText, Search, ChevronLeft, ChevronRight, Filter,
   LogIn, Shield, CreditCard, Wallet, UserCog, Settings, Eye,
@@ -211,8 +211,8 @@ export default function Logs() {
                       const style = getActionStyle(log.action)
                       const isExpanded = expandedLog === log.id
                       return (
-                        <>
-                          <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
+                        <Fragment key={log.id}>
+                          <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                             <td className="px-5 py-3">
                               <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${style.bg} ${style.color} ${style.border}`}>
                                 {formatAction(log.action)}
@@ -258,7 +258,7 @@ export default function Logs() {
                             </td>
                           </tr>
                           {isExpanded && log.metadata && (
-                            <tr key={`${log.id}-meta`} className="bg-gray-50">
+                            <tr className="bg-gray-50">
                               <td colSpan={6} className="px-5 py-3">
                                 <pre className="text-xs text-gray-600 font-mono bg-white rounded-lg border border-gray-200 p-3 overflow-x-auto max-h-40">
                                   {JSON.stringify(log.metadata, null, 2)}
@@ -266,7 +266,7 @@ export default function Logs() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       )
                     })}
                   </tbody>
