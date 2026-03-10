@@ -1,10 +1,13 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Eye, X } from "lucide-react"
+import { Search, Eye, X, Copy } from "lucide-react"
 import { LoanStatus, type Loan } from "@avelon_capstone/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { TablePageSkeleton } from "@/components/skeletons"
+
+// Admin response extends base Loan with borrower wallet address
+type AdminLoan = Loan & { wallet?: { address: string } | null }
 
 // ── StatusBadge ────────────────────────────────────────────
 const statusStyles: Record<LoanStatus, string> = {
@@ -31,7 +34,7 @@ function LoanDetailModal({
   isOpen,
   onClose,
 }: {
-  loan: Loan | null
+  loan: AdminLoan | null
   isOpen: boolean
   onClose: () => void
 }) {
@@ -51,6 +54,27 @@ function LoanDetailModal({
           <div className="space-y-3 text-sm text-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Loan Info</h3>
             <div className="flex justify-between"><span className="text-gray-500">Loan ID</span><span className="font-medium font-mono text-xs">{loan.id.slice(0, 12)}...</span></div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Contract Loan ID</span>
+              {loan.contractLoanId != null
+                ? <span className="font-bold text-orange-600 text-base bg-orange-50 px-2 py-0.5 rounded-md">{loan.contractLoanId}</span>
+                : <span className="text-gray-400 text-xs">Not on-chain yet</span>}
+            </div>
+            {loan.wallet?.address && (
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-gray-500 shrink-0">Borrower Wallet</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-xs text-gray-800 break-all">{loan.wallet.address}</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(loan.wallet!.address)}
+                    className="shrink-0 text-gray-400 hover:text-gray-700"
+                    title="Copy address"
+                  >
+                    <Copy size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex justify-between"><span className="text-gray-500">Principal</span><span className="font-medium">{loan.principal} ETH</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Interest Rate</span><span className="font-medium">{loan.interestRate}%</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="font-medium">{loan.duration} days</span></div>
@@ -82,11 +106,11 @@ function LoanDetailModal({
 
 // ── Main Component ─────────────────────────────────────────
 export default function LoanRequests() {
-  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans")
+  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: AdminLoan[] }>("/api/v1/admin/loans")
   const loans = loansData?.loans ?? []
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | LoanStatus>("all")
-  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
+  const [selectedLoan, setSelectedLoan] = useState<AdminLoan | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const filtered = useMemo(() => {
@@ -164,7 +188,12 @@ export default function LoanRequests() {
                 ) : (
                   filtered.map((loan) => (
                     <tr key={loan.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-mono text-gray-600">{loan.id.slice(0, 8)}...</td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-mono text-gray-600">{loan.id.slice(0, 8)}...</span>
+                        {loan.contractLoanId != null && (
+                          <span className="ml-2 text-xs font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">#{loan.contractLoanId}</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900">{loan.principal} ETH</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{loan.duration} days</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{loan.interestRate}%</td>

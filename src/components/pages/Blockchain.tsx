@@ -395,9 +395,15 @@ export default function Blockchain() {
                                 <Database size={18} className="text-amber-500" />
                                 <h3 className="text-base font-semibold text-gray-900">Deposit Collateral</h3>
                             </div>
-                            <p className="text-xs text-gray-400 mb-5">
+                            <p className="text-xs text-gray-400 mb-3">
                                 Calls <span className="font-mono">CollateralManager.depositCollateral(loanId)</span> with ETH. Activates the loan on-chain.
                             </p>
+                            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                                <AlertTriangle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-amber-800">
+                                    MetaMask must be connected as the <strong>borrower&apos;s wallet</strong> — the same address the user registered in the mobile app. Check the <strong>Loans page → View → Borrower Wallet</strong> to confirm which account to use.
+                                </p>
+                            </div>
                             <div className="space-y-3">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Contract Loan ID</label>
