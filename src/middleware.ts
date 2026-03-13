@@ -1,5 +1,5 @@
 /**
- * Next.js Proxy for Route Protection (Next.js 16+)
+ * Next.js Middleware for Route Protection
  * Protects admin routes and handles auth redirects
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,10 +11,9 @@ const protectedRoutes = ['/admin'];
 const authRoutes = ['/login'];
 
 /**
- * Proxy function - runs before every request
- * Named export required for Next.js 16+
+ * middleware - runs before every matched request
  */
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Check for auth cookie
