@@ -16,7 +16,6 @@ const inflowTypes = new Set([
   LoanTransactionType.COLLATERAL_DEPOSIT,
   LoanTransactionType.COLLATERAL_TOPUP,
   LoanTransactionType.REPAYMENT,
-  LoanTransactionType.FEE_PAYMENT,
 ])
 
 export default function Transaction() {
