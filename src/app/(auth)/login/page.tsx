@@ -79,8 +79,8 @@ function LoginPageContent() {
         const result = await login(email, password)
 
         if (result.success) {
-            // httpOnly cookie is set automatically by backend on login endpoint
-            // No need to manually set authentication cookie from frontend
+            // Set the cookie the proxy middleware checks for route guarding
+            document.cookie = 'avelon:authenticated=true; path=/; max-age=86400'
 
             // Redirect to intended page or admin
             const from = searchParams.get('from') || '/admin'
