@@ -1,7 +1,7 @@
 "use client"
 
 import { ShieldCheck, AlertTriangle, Activity, Clock } from "lucide-react"
-import { LoanStatus as LoanStatusEnum, CollateralHealth, type Loan } from "@avelon_capstone/types"
+import { LoanStatus as LoanStatusEnum, CollateralHealth, type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { LoanStatusSkeleton } from "@/components/skeletons"
 

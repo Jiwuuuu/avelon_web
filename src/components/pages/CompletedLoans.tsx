@@ -1,6 +1,6 @@
 "use client"
 
-import { type Loan } from "@avelon_capstone/types"
+import { type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { CompletedLoansSkeleton } from "@/components/skeletons"
 

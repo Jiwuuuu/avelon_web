@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ArrowDownToLine, ArrowUpToLine, Search } from "lucide-react"
-import { LoanTransactionType, TransactionStatus, type LoanTransaction } from "@avelon_capstone/types"
+import { LoanTransactionType, TransactionStatus, type LoanTransaction } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { TransactionSkeleton } from "@/components/skeletons"
 

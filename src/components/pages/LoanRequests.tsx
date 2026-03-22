@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Search, Eye, X, Copy } from "lucide-react"
-import { LoanStatus, type Loan } from "@avelon_capstone/types"
+import { LoanStatus, type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { TablePageSkeleton } from "@/components/skeletons"
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { Search, Eye, X, ChevronLeft, ChevronRight, Ban, ShieldCheck, Loader2, CheckCircle, XCircle } from "lucide-react"
-import { UserStatus, type UserProfile } from "@avelon_capstone/types"
+import { UserStatus, type UserProfile } from "@/types"
 import { api } from "@/lib/api"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { UsersSkeleton } from "@/components/skeletons"

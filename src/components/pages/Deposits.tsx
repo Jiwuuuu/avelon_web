@@ -1,7 +1,7 @@
 "use client"
 
 import { PiggyBank, ShieldCheck, Layers3, ArrowDownToLine, TrendingUp, Users } from "lucide-react"
-import { LoanStatus, type Loan } from "@avelon_capstone/types"
+import { LoanStatus, type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { DepositsSkeleton } from "@/components/skeletons"
 

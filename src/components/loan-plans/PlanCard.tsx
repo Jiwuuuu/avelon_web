@@ -1,5 +1,5 @@
 import { Clock, Eye, Trash2 } from "lucide-react"
-import { type LoanPlan, InterestType } from "@avelon_capstone/types"
+import { type LoanPlan, InterestType } from "@/types"
 import { getTier } from "@/lib/loan-plans"
 
 interface PlanCardProps {

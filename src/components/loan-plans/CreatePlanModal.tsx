@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { FormEvent } from "react"
 import { X, Loader2, PlusCircle } from "lucide-react"
-import { type LoanPlan, type CreateLoanPlanInput, InterestType } from "@avelon_capstone/types"
+import { type LoanPlan, type CreateLoanPlanInput, InterestType } from "@/types"
 import { api } from "@/lib/api"
 
 interface CreatePlanModalProps {
