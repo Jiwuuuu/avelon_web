@@ -13,11 +13,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
     title: {
-        default: 'Avelon Admin Dashboard',
-        template: '%s | Avelon Admin',
+        default: 'Avelon — Decentralized Lending Platform',
+        template: '%s | Avelon',
     },
-    description: 'Admin dashboard for Avelon — a decentralized crypto lending platform on Ethereum.',
-    keywords: ['avelon', 'crypto lending', 'admin dashboard', 'ethereum', 'defi'],
+    description: 'Avelon — a decentralized crypto lending platform on Ethereum. Invest, borrow, and manage digital assets.',
+    keywords: ['avelon', 'crypto lending', 'ethereum', 'defi', 'liquidity pool', 'invest'],
     robots: { index: false, follow: false },
     icons: { icon: '/favicon.ico' },
 }

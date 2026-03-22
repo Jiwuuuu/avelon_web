@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import avelonLogo from '@/assets/avelon_nobg.png'
 import { useAuth } from '@/contexts/auth-context'
+import { UserRole } from '@avelon_capstone/types'
 import { AlertCircle, Lock, ShieldOff, WifiOff } from 'lucide-react'
 
 // Determine the error type from the message so we can show the right icon
@@ -41,7 +42,6 @@ function ErrorAlert({ message }: { message: string }) {
                 type === 'network' ? WifiOff :
                     AlertCircle
 
-    // Strip the seconds from the message when showing our own countdown
     const displayMessage =
         type === 'locked' && countdown > 0
             ? `Account temporarily locked. Retry in ${countdown}s.`
@@ -55,15 +55,29 @@ function ErrorAlert({ message }: { message: string }) {
     )
 }
 
+/** Return the default dashboard path for a given role. */
+function getDefaultRedirect(role: UserRole | undefined): string {
+    if (role === UserRole.ADMIN) return '/admin'
+    return '/investor/dashboard'
+}
+
 function LoginPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { login, isLoading: authLoading } = useAuth()
+    const { login, isLoading: authLoading, isAuthenticated, user } = useAuth()
 
     const [email, setEmail] = useState<string>('')
     const [password, setPassword] = useState<string>('')
     const [error, setError] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+
+    // If already authenticated, redirect by role
+    useEffect(() => {
+        if (!authLoading && isAuthenticated && user) {
+            const from = searchParams.get('from')
+            router.push(from || getDefaultRedirect(user.role))
+        }
+    }, [authLoading, isAuthenticated, user, router, searchParams])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -82,9 +96,9 @@ function LoginPageContent() {
             // Set the cookie the proxy middleware checks for route guarding
             document.cookie = 'avelon:authenticated=true; path=/; max-age=86400'
 
-            // Redirect to intended page or admin
-            const from = searchParams.get('from') || '/admin'
-            router.push(from)
+            // Role-based redirect
+            const from = searchParams.get('from')
+            router.push(from || getDefaultRedirect(result.role))
         } else {
             setError(result.error || 'Login failed')
         }
@@ -111,7 +125,7 @@ function LoginPageContent() {
                         priority
                     />
                     <p className="text-center text-sm text-gray-500">
-                        Admin Panel Login
+                        Sign in to Avelon
                     </p>
                 </div>
 
@@ -122,7 +136,7 @@ function LoginPageContent() {
                         <label className="text-sm text-gray-600">Email</label>
                         <input
                             type="email"
-                            placeholder="admin@avelon.io"
+                            placeholder="you@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={isLoading}
@@ -147,12 +161,12 @@ function LoginPageContent() {
                         disabled={isLoading}
                         className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? 'Logging in...' : 'Login'}
+                        {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
                 <p className="text-xs text-gray-400 text-center mt-6">
-                    Protected by AI-based risk models & secure authentication
+                    Protected by AI-based risk models &amp; secure authentication
                 </p>
             </div>
         </div>
