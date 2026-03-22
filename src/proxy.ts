@@ -1,6 +1,10 @@
 /**
  * Next.js Proxy for Route Protection (Next.js 16+)
  * Protects admin routes and handles auth redirects
+ *
+ * Investor portal routes (/investor/dashboard, etc.) are NOT gated here: demo auth
+ * lives in localStorage and is enforced in `InvestorPortalLayout` (client). Server
+ * middleware cannot read localStorage; cookie-based checks caused broken sign-in.
  */
 import { NextRequest, NextResponse } from 'next/server';
 
