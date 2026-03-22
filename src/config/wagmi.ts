@@ -1,23 +1,7 @@
-import { cookieStorage, createStorage, createConfig, http } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { sepolia, type AppKitNetwork } from '@reown/appkit/networks';
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
-
-if (!projectId) {
-    throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
-}
-
-// Only Sepolia chain configured — prevents mainnet connections.
-export const wagmiConfig = createConfig({
-    chains: [sepolia],
-    transports: {
-        [sepolia.id]: http(),
-    },
-    ssr: true,
-    storage: createStorage({
-        storage: cookieStorage,
-    }),
-});
+export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '';
 
 export const walletConnectMetadata = {
     name: 'Avelon',
@@ -26,4 +10,13 @@ export const walletConnectMetadata = {
     icons: ['/favicon.ico'],
 };
 
-export { projectId };
+// Only Sepolia chain configured — prevents mainnet connections.
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [sepolia];
+
+export const wagmiAdapter = new WagmiAdapter({
+    projectId,
+    networks,
+    ssr: true,
+});
+
+export const wagmiConfig = wagmiAdapter.wagmiConfig;
