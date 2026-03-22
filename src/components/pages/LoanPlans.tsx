@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react"
 import { ChevronLeft, ChevronRight, PlusCircle, Search, Coins, TrendingUp, Shield, Percent, LayoutGrid, List } from "lucide-react"
-import type { LoanPlan } from "@avelon_capstone/types"
+import type { LoanPlan } from "@/types"
 import { api } from "@/lib/api"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { LoanPlansSkeleton } from "@/components/skeletons"

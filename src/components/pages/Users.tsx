@@ -1,11 +1,31 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Search, Eye, X, ChevronLeft, ChevronRight, Ban, ShieldCheck, Loader2 } from "lucide-react"
-import { UserStatus, type UserProfile } from "@avelon_capstone/types"
+import { useState, useMemo, useEffect } from "react"
+import { Search, Eye, X, ChevronLeft, ChevronRight, Ban, ShieldCheck, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { UserStatus, type UserProfile } from "@/types"
 import { api } from "@/lib/api"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { UsersSkeleton } from "@/components/skeletons"
+
+// ── KYC Document types (returned by GET /admin/kyc/:userId) ─
+interface KycDocument {
+  id: string
+  type: string
+  status: string
+  fileName: string
+  aiVerified: boolean | null
+  aiConfidence: number | null
+  aiFraudScore: number | null
+  faceMatchScore: number | null
+  faceMatchPassed: boolean | null
+  createdAt: string
+}
+
+interface UserKycData {
+  id: string
+  documents: KycDocument[]
+  kycSubmittedAt: string | null
+}
 
 // ── StatusBadge ────────────────────────────────────────────
 const statusStyles: Record<UserStatus, string> = {
@@ -58,7 +78,26 @@ function UserDetailsModal({
   onUnsuspend: () => void
   isUpdating: boolean
 }) {
+  const [kycData, setKycData] = useState<UserKycData | null>(null)
+  const [kycLoading, setKycLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen || !user) {
+      setKycData(null)
+      return
+    }
+    setKycLoading(true)
+    api.get<UserKycData>(`/api/v1/admin/kyc/${user.id}`)
+      .then((res) => { if (res.success && res.data) setKycData(res.data) })
+      .catch(() => {})
+      .finally(() => setKycLoading(false))
+  }, [isOpen, user])
+
   if (!isOpen || !user) return null
+
+  // Extract the SELFIE document for face match display
+  const selfieDoc = kycData?.documents.find((d) => d.type === "SELFIE")
+  const hasKycDocs = (kycData?.documents.length ?? 0) > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -141,6 +180,64 @@ function UserDetailsModal({
             </div>
           </div>
         </div>
+
+        {/* KYC & Face Match Section */}
+        {kycLoading ? (
+          <div className="mt-8 pt-6 border-t border-gray-200 flex items-center gap-2 text-sm text-gray-400">
+            <Loader2 size={16} className="animate-spin" /> Loading KYC data…
+          </div>
+        ) : hasKycDocs ? (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">KYC Verification</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Face Match Card */}
+              <div className={`rounded-xl border p-4 ${
+                selfieDoc?.faceMatchPassed === true
+                  ? "border-green-200 bg-green-50"
+                  : selfieDoc?.faceMatchPassed === false
+                    ? "border-red-200 bg-red-50"
+                    : "border-gray-200 bg-gray-50"
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Face Match</span>
+                  {selfieDoc?.faceMatchPassed === true && <CheckCircle size={18} className="text-green-500" />}
+                  {selfieDoc?.faceMatchPassed === false && <XCircle size={18} className="text-red-500" />}
+                  {!selfieDoc && <span className="text-xs text-gray-400">Not run</span>}
+                </div>
+                {selfieDoc?.faceMatchScore != null ? (
+                  <>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {Math.round(selfieDoc.faceMatchScore * 100)}%
+                    </p>
+                    <p className={`text-xs mt-1 font-medium ${selfieDoc.faceMatchPassed ? "text-green-700" : "text-red-700"}`}>
+                      {selfieDoc.faceMatchPassed ? "Selfie matches ID photo" : "Selfie does not match ID photo"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-1">No face verification data</p>
+                )}
+              </div>
+
+              {/* Document summary */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Documents</span>
+                <div className="mt-2 space-y-1">
+                  {kycData!.documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between text-xs text-gray-600">
+                      <span>{doc.type.replace(/_/g, " ")}</span>
+                      <span className={`font-medium ${
+                        doc.aiVerified ? "text-green-600" :
+                        doc.status === "REJECTED" ? "text-red-600" : "text-yellow-600"
+                      }`}>
+                        {doc.aiVerified ? "Verified" : doc.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Footer Actions — only Suspend/Unsuspend, NO approve/reject (KYC is AI-only) */}
         <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">

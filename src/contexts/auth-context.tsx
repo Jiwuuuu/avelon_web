@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserRole } from '@avelon_capstone/types';
+import { UserRole } from '@/types';
 import {
     login as apiLogin,
     logout as apiLogout,

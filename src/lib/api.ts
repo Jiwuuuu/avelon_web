@@ -2,7 +2,7 @@
  * API Client for Avelon Backend
  * Handles all HTTP requests with authentication
  */
-import type { AuthTokens, UserRole } from '@avelon_capstone/types';
+import type { AuthTokens, UserRole } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
