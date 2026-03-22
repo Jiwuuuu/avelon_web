@@ -1,6 +1,281 @@
-import { redirect } from 'next/navigation'
+"use client";
 
+import Link from "next/link";
+
+// ── Icons (inline SVG) ────────────────────────────────────────────────────
+const AvelonLogo = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <rect x="2" y="8" width="10" height="16" rx="1" fill="#E85C1A" />
+    <rect x="14" y="4" width="6" height="20" rx="1" fill="#E85C1A" opacity="0.6" />
+    <rect x="22" y="12" width="8" height="12" rx="1" fill="#E85C1A" opacity="0.35" />
+  </svg>
+);
+
+const IconGrid = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <rect x="1" y="1" width="6" height="6" rx="1" fill="#E85C1A" />
+    <rect x="11" y="1" width="6" height="6" rx="1" fill="#E85C1A" opacity="0.5" />
+    <rect x="1" y="11" width="6" height="6" rx="1" fill="#E85C1A" opacity="0.5" />
+    <rect x="11" y="11" width="6" height="6" rx="1" fill="#E85C1A" />
+  </svg>
+);
+
+const IconPercent = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <circle cx="5" cy="5" r="3" stroke="#E85C1A" strokeWidth="1.5" />
+    <circle cx="13" cy="13" r="3" stroke="#E85C1A" strokeWidth="1.5" />
+    <line x1="14" y1="4" x2="4" y2="14" stroke="#E85C1A" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconCoin = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <circle cx="9" cy="9" r="7" stroke="#E85C1A" strokeWidth="1.5" />
+    <text x="9" y="13" textAnchor="middle" fontSize="9" fill="#E85C1A" fontWeight="bold">$</text>
+  </svg>
+);
+
+const IconChevron = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M6 4l4 4-4 4" stroke="#E85C1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// ── HeroIllustration ──────────────────────────────────────────────────────
+const HeroIllustration = () => (
+  <svg viewBox="0 0 480 380" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: 520, filter: "drop-shadow(0 20px 60px rgba(232,92,26,0.15))" }}>
+    <ellipse cx="280" cy="200" rx="180" ry="140" fill="#E85C1A" opacity="0.07" />
+    <path d="M100 290 L260 220 L420 290 L260 360 Z" fill="#F5F5F5" stroke="#E0E0E0" strokeWidth="1" />
+    <path d="M100 290 L260 360 L260 370 L100 300 Z" fill="#E8E8E8" />
+    <path d="M420 290 L260 360 L260 370 L420 300 Z" fill="#EBEBEB" />
+    <path d="M160 290 L200 270 L200 190 L160 210 Z" fill="#1A1A1A" />
+    <path d="M200 190 L240 170 L240 250 L200 270 Z" fill="#2A2A2A" />
+    <path d="M160 210 L200 190 L240 170 L200 150 Z" fill="#333" />
+    <path d="M240 290 L280 270 L280 150 L240 170 Z" fill="#1A1A1A" />
+    <path d="M280 150 L320 130 L320 250 L280 270 Z" fill="#2A2A2A" />
+    <path d="M240 170 L280 150 L320 130 L280 110 Z" fill="#333" />
+    <path d="M320 290 L360 270 L360 200 L320 220 Z" fill="#1A1A1A" />
+    <path d="M360 200 L400 180 L400 260 L360 270 Z" fill="#2A2A2A" />
+    <path d="M320 220 L360 200 L400 180 L360 160 Z" fill="#333" />
+    <path d="M195 260 L310 140" stroke="#E85C1A" strokeWidth="3.5" strokeLinecap="round" />
+    <path d="M295 130 L315 142 L305 162" stroke="#E85C1A" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <circle cx="380" cy="90" r="20" fill="white" stroke="#E0E0E0" strokeWidth="1.5" />
+    <text x="380" y="96" textAnchor="middle" fontSize="14" fill="#E85C1A" fontWeight="bold">$</text>
+    <circle cx="120" cy="180" r="16" fill="white" stroke="#E0E0E0" strokeWidth="1.5" />
+    <text x="120" y="186" textAnchor="middle" fontSize="12" fill="#E85C1A" fontWeight="bold">$</text>
+    <circle cx="400" cy="230" r="13" fill="white" stroke="#E0E0E0" strokeWidth="1.5" />
+    <text x="400" y="235" textAnchor="middle" fontSize="10" fill="#E85C1A" fontWeight="bold">$</text>
+    <rect x="340" y="280" width="110" height="70" rx="10" fill="white" stroke="#E0E0E0" strokeWidth="1.5" />
+    <rect x="340" y="280" width="110" height="22" rx="10" fill="#E85C1A" opacity="0.15" />
+    <rect x="350" y="315" width="40" height="6" rx="3" fill="#E0E0E0" />
+    <rect x="350" y="327" width="60" height="6" rx="3" fill="#F0F0F0" />
+  </svg>
+);
+
+// ── Step Card ─────────────────────────────────────────────────────────────
+interface StepProps {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  last?: boolean;
+}
+const StepCard = ({ icon, title, desc, last }: StepProps) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 0, flex: 1 }}>
+    <div style={{
+      background: "white",
+      border: "1px solid #F0F0F0",
+      borderRadius: 16,
+      padding: "20px 18px",
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 14,
+      flex: 1,
+      boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 3,
+        background: "linear-gradient(90deg, #E85C1A, #FF8C5A)",
+        borderRadius: "0 0 16px 16px",
+      }} />
+      <div style={{
+        width: 44, height: 44, borderRadius: 12, background: "#FFF5F0",
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.5 }}>{desc}</div>
+      </div>
+    </div>
+    {!last && (
+      <div style={{ padding: "0 6px", color: "#E85C1A", flexShrink: 0 }}>
+        <IconChevron />
+      </div>
+    )}
+  </div>
+);
+
+// ── Navbar ─────────────────────────────────────────────────────────────────
+const Navbar = () => (
+  <nav style={{
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "0 48px", height: 72,
+    borderBottom: "1px solid #F0F0F0",
+    background: "white",
+    position: "sticky", top: 0, zIndex: 100,
+  }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+        <AvelonLogo />
+        <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 18, color: "#111", letterSpacing: -0.5 }}>AVELON</span>
+      </Link>
+      <div style={{ display: "flex", gap: 32, marginLeft: 8 }}>
+        {["Home", "About", "How It Works"].map(item => (
+          <span key={item} style={{
+            fontFamily: "'Sora', sans-serif",
+            fontSize: 14, fontWeight: item === "Home" ? 600 : 400,
+            color: item === "Home" ? "#E85C1A" : "#6B7280",
+            borderBottom: item === "Home" ? "2px solid #E85C1A" : "none",
+            paddingBottom: 2,
+          }}>{item}</span>
+        ))}
+      </div>
+    </div>
+    <div style={{ display: "flex", gap: 12 }}>
+      <Link href="/login" style={{
+        padding: "10px 24px", borderRadius: 10, background: "#111", border: "none",
+        color: "white", fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: 14,
+        textDecoration: "none", display: "inline-block",
+      }}>Sign Up</Link>
+      <Link href="/login" style={{
+        padding: "10px 24px", borderRadius: 10, background: "white",
+        border: "1.5px solid #E0E0E0", color: "#111",
+        fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: 14,
+        textDecoration: "none", display: "inline-block",
+      }}>Sign In</Link>
+    </div>
+  </nav>
+);
+
+// ── Landing Page Content ───────────────────────────────────────────────────
 export default function HomePage() {
-    // Redirect to admin dashboard by default
-    redirect('/admin')
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: white; }
+        a { transition: opacity 0.15s, transform 0.15s; }
+        a:hover { opacity: 0.85; }
+      `}</style>
+
+      <Navbar />
+
+      <div style={{ minHeight: "100vh", background: "white", fontFamily: "'Sora', sans-serif" }}>
+        {/* Hero */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "64px 48px 48px", display: "flex", alignItems: "center", gap: 48 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "#FFF5F0", border: "1px solid #FFD4BC",
+              borderRadius: 999, padding: "6px 16px", marginBottom: 32,
+            }}>
+              <IconGrid />
+              <span style={{ fontSize: 13, fontWeight: 500, color: "#E85C1A" }}>Decentralized Lending Platform</span>
+            </div>
+
+            <h1 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.1, color: "#111", margin: "0 0 20px", letterSpacing: -1.5 }}>
+              Grow Your Assets by<br />
+              <span style={{ color: "#E85C1A" }}>Providing Liquidity</span>
+            </h1>
+
+            <p style={{ fontSize: 15, color: "#9CA3AF", lineHeight: 1.7, marginBottom: 36, maxWidth: 440 }}>
+              Join Avelon&apos;s Liquidity Pool and earn passive returns from crypto lending.
+              <span style={{ margin: "0 8px", color: "#E0E0E0" }}>·</span>Secure
+              <span style={{ margin: "0 8px", color: "#E0E0E0" }}>·</span>Transparent
+              <span style={{ margin: "0 8px", color: "#E0E0E0" }}>·</span>Real Time
+            </p>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
+              {[
+                { icon: <IconGrid />, label: "Audited Smart Contracts" },
+                { icon: <IconPercent />, label: "10% Platform Fee" },
+                { icon: <IconCoin />, label: "Real-Time Earnings" },
+              ].map(({ icon, label }) => (
+                <div key={label} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "white", border: "1.5px solid #F0F0F0",
+                  borderRadius: 999, padding: "8px 16px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  fontSize: 13, fontWeight: 500, color: "#374151",
+                }}>
+                  {icon} {label}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 12 }}>
+              <Link href="/login" style={{
+                padding: "14px 32px", borderRadius: 12, background: "linear-gradient(135deg, #E85C1A, #FF8C5A)",
+                border: "none", color: "white", fontFamily: "'Sora', sans-serif",
+                fontWeight: 700, fontSize: 15, textDecoration: "none",
+                boxShadow: "0 8px 24px rgba(232,92,26,0.3)", display: "inline-block",
+              }}>Get Started</Link>
+              <span style={{
+                padding: "14px 32px", borderRadius: 12, background: "white",
+                border: "1.5px solid #E0E0E0", color: "#111",
+                fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: 15,
+                cursor: "pointer", display: "inline-block",
+              }}>Learn More</span>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: "flex", justifyContent: "center", position: "relative" }}>
+            <div style={{
+              position: "absolute", inset: -40,
+              background: "radial-gradient(ellipse at center, rgba(232,92,26,0.08) 0%, transparent 70%)",
+              borderRadius: "50%",
+            }} />
+            <HeroIllustration />
+          </div>
+        </div>
+
+        {/* How It Works */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 48px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #E0E0E0)" }} />
+            <span style={{ fontWeight: 700, fontSize: 20, color: "#111", letterSpacing: -0.5 }}>How It Works</span>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #E0E0E0, transparent)" }} />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "stretch", gap: 0, marginBottom: 64 }}>
+            <StepCard icon={<IconGrid />} title="Sign Up / Sign In" desc="Register to access our service" />
+            <StepCard icon={<IconCoin />} title="Connect Wallet" desc="Securely link your crypto wallet" />
+            <StepCard icon={<IconPercent />} title="Deposit Assets" desc="Add ETH to the pool" />
+            <StepCard icon={<IconCoin />} title="Earn Rewards" desc="Get returns from loan interest" />
+            <StepCard icon={<IconGrid />} title="Withdraw Anytime" desc="Claim your earnings instantly" last />
+          </div>
+        </div>
+
+        {/* About */}
+        <div style={{ maxWidth: 1200, margin: "0 auto 64px", padding: "0 48px" }}>
+          <div style={{
+            background: "linear-gradient(135deg, #FFF5F0 0%, #FFF8F5 50%, #FFFAF8 100%)",
+            border: "1px solid #FFD4BC",
+            borderRadius: 24, padding: "48px",
+          }}>
+            <h2 style={{ fontWeight: 800, fontSize: 24, color: "#111", marginBottom: 16, letterSpacing: -0.5 }}>About Us</h2>
+            <p style={{ color: "#6B7280", lineHeight: 1.7, maxWidth: 640, fontSize: 15 }}>
+              Avelon is a decentralized lending protocol built to democratize access to liquidity.
+              We connect investors with borrowers through secure, audited smart contracts —
+              creating a transparent ecosystem where everyone benefits.
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }

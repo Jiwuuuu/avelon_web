@@ -1,5 +1,6 @@
 /**
  * Auth Context - Global authentication state management
+ * Supports all user roles (RBAC) — routing is enforced at the layout level.
  */
 'use client';
 
@@ -22,7 +23,7 @@ interface AuthContextType {
     user: SessionUser | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
 }
@@ -47,14 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const result = await getSession();
                 if (result.success && result.data?.isAuthenticated && result.data.user) {
-                    // Verify user is admin
-                    if (result.data.user.role !== UserRole.ADMIN) {
-                        clearTokens();
-                        setUserState(null);
-                    } else {
-                        setUserState(result.data.user);
-                        setUser(result.data.user);
-                    }
+                    setUserState(result.data.user);
+                    setUser(result.data.user);
                 } else {
                     clearTokens();
                     setUserState(null);
@@ -77,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const result = await apiLogin(email, password);
 
             if (!result.success || !result.data) {
-                // Backend returns errors as { error: { code, message } }
                 const errorMsg =
                     (typeof result.error === 'object' && result.error !== null
                         ? (result.error as { message?: string }).message
@@ -89,23 +83,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const { user: loginUser, accessToken, refreshToken, expiresIn } = result.data;
 
-            // Check if user is admin
-            if (loginUser.role !== UserRole.ADMIN) {
-                return { success: false, error: 'Access denied. Admin only.' };
-            }
-
-            // Store tokens and user
+            // Store tokens and user (any role allowed)
             setTokens({ accessToken, refreshToken, expiresIn });
             setUser(loginUser);
             setUserState(loginUser);
 
-            return { success: true };
+            return { success: true, role: loginUser.role };
         } catch {
             return { success: false, error: 'Network error. Please check your connection and try again.' };
         }
     }, []);
 
     const logout = useCallback(async () => {
+        document.cookie = 'avelon:authenticated=; path=/; max-age=0';
         await apiLogout();
         setUserState(null);
         router.push('/login');
