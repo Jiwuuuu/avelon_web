@@ -5,7 +5,7 @@ import { CheckCircle2, Info, Loader2, Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
 import { useAccount, useBalance, useChainId, useSwitchChain, useSendTransaction } from "wagmi";
-import { parseEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { sepolia } from "wagmi/chains";
 import { useAppKit } from "@reown/appkit/react";
 
@@ -138,7 +138,7 @@ export default function InvestPage() {
                 Connected: <span className="font-mono text-xs">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                 {walletBalance && (
                   <span className="ml-2 font-mono text-xs text-emerald-700">
-                    {parseFloat(walletBalance.formatted).toFixed(4)} {walletBalance.symbol}
+                    {parseFloat(formatEther(walletBalance.value)).toFixed(4)} {walletBalance.symbol}
                   </span>
                 )}
               </span>
