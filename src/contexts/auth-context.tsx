@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const logout = useCallback(async () => {
+        window.dispatchEvent(new Event('avelon:logout'));
         document.cookie = 'avelon:authenticated=; path=/; max-age=0';
         await apiLogout();
         setUserState(null);
