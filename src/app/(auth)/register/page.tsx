@@ -273,6 +273,7 @@ function RegisterPageContent() {
               <div style={fieldStyle}>
                 <IconLock />
                 <input
+                  name="password"
                   type={showPass ? "text" : "password"}
                   placeholder="Password (8+ chars, A-z, 0-9, special)"
                   value={password}
@@ -291,12 +292,13 @@ function RegisterPageContent() {
               <div style={fieldStyle}>
                 <IconLock />
                 <input
+                  name="confirmPassword"
                   type={showConfirm ? "text" : "password"}
                   placeholder="Confirm Password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   disabled={isLoading}
-                  autoComplete="new-password"
+                  autoComplete="off"
                   required
                   style={inputStyle}
                 />
