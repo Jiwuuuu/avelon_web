@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Fuel, Loader2 } from "lucide-react";
+import { CheckCircle2, Fuel, Loader2, Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
+import { useAccount } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 
 type Deposit = {
   id: string;
@@ -13,28 +15,42 @@ type Deposit = {
   createdAt: string;
 };
 
+type WithdrawResponse = Deposit & { txHash: string };
+
 export default function WithdrawPage() {
   const { data, loading, error, refresh } = useCachedFetch<Deposit[]>(
     "/api/v1/investor/deposits?status=CONFIRMED"
   );
 
+  const { address, isConnected } = useAccount();
+  const { open: openAppKit } = useAppKit();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [step, setStep] = useState<"form" | "submitting" | "done" | "error">("form");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [withdrawTxHash, setWithdrawTxHash] = useState<string | null>(null);
 
   const confirmedDeposits = data ?? [];
   const totalWithdrawable = confirmedDeposits.reduce((s, d) => s + d.amount, 0);
 
   async function confirmWithdraw() {
-    if (!selectedId) return;
+    if (!selectedId || !address) return;
     setStep("submitting");
     setErrorMsg(null);
+
+    console.log("[Withdraw] confirmWithdraw", { selectedId, walletAddress: address });
+
     try {
-      const res = await api.post<Deposit>(`/api/v1/investor/withdraw/${selectedId}`, {});
+      const res = await api.post<WithdrawResponse>(`/api/v1/investor/withdraw/${selectedId}`, {
+        walletAddress: address,
+      });
+      console.log("[Withdraw] backend response:", res);
       if (!res.success) throw new Error(res.message ?? "Withdrawal failed");
+      setWithdrawTxHash(res.data?.txHash ?? null);
       setStep("done");
       refresh();
     } catch (err: unknown) {
+      console.error("[Withdraw] ❌ error:", err);
       setErrorMsg(err instanceof Error ? err.message : "An error occurred");
       setStep("error");
     }
@@ -44,6 +60,7 @@ export default function WithdrawPage() {
     setStep("form");
     setSelectedId(null);
     setErrorMsg(null);
+    setWithdrawTxHash(null);
   }
 
   return (
@@ -52,6 +69,39 @@ export default function WithdrawPage() {
         <h1 className="text-2xl font-bold text-stone-900">Withdraw / Redeem</h1>
         <p className="text-stone-500 text-sm mt-1">Redeem your confirmed liquidity deposits.</p>
       </div>
+
+      {/* Wallet Connection Banner */}
+      {step === "form" && (
+        <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
+          {isConnected ? (
+            <>
+              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="text-sm text-stone-600">
+                Withdraw to: <span className="font-mono text-xs">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => openAppKit()}
+                className="ml-auto text-xs font-medium text-[#E85C1A]"
+              >
+                Switch
+              </button>
+            </>
+          ) : (
+            <>
+              <Wallet className="h-4 w-4 text-stone-400" />
+              <span className="text-sm text-stone-500">Connect wallet to receive ETH</span>
+              <button
+                type="button"
+                onClick={() => openAppKit()}
+                className="ml-auto rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                Connect Wallet
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>
@@ -121,16 +171,21 @@ export default function WithdrawPage() {
           <div className="flex items-start gap-2 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3 text-sm text-stone-600">
             <Fuel className="h-4 w-4 text-stone-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-stone-800">Gas fee estimate</p>
-              <p className="font-mono text-xs mt-0.5">~0.00048 ETH</p>
-              <p className="text-xs text-stone-500 mt-1">Actual cost depends on network conditions.</p>
+              <p className="font-medium text-stone-800">Gas fee</p>
+              <p className="text-xs text-stone-500 mt-0.5">Gas is paid by the platform. You receive the full deposit amount.</p>
             </div>
           </div>
+
+          {!isConnected && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              Connect your wallet above to specify where ETH should be sent.
+            </div>
+          )}
 
           <button
             type="button"
             onClick={confirmWithdraw}
-            disabled={!selectedId || confirmedDeposits.length === 0}
+            disabled={!selectedId || !isConnected || confirmedDeposits.length === 0}
             className="w-full py-3 rounded-xl bg-stone-900 text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Confirm withdrawal
@@ -142,6 +197,7 @@ export default function WithdrawPage() {
         <div className="bg-white rounded-2xl border border-stone-200 p-10 shadow-sm text-center space-y-3">
           <Loader2 className="h-10 w-10 animate-spin text-[#E85C1A] mx-auto" />
           <p className="font-medium text-stone-900">Processing withdrawal…</p>
+          <p className="text-sm text-stone-500">Sending ETH to your wallet. This may take a moment.</p>
         </div>
       )}
 
@@ -150,8 +206,19 @@ export default function WithdrawPage() {
           <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
           <p className="font-medium text-stone-900">Withdrawal complete</p>
           <p className="text-sm text-stone-500">
-            Your deposit has been withdrawn from the pool. Funds will appear in your wallet.
+            ETH has been sent to your wallet. The transaction is confirmed on-chain.
           </p>
+          {withdrawTxHash && (
+            <a
+              href={`https://sepolia.etherscan.io/tx/${withdrawTxHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs font-mono text-[#E85C1A] hover:underline"
+            >
+              View on Etherscan: {withdrawTxHash.slice(0, 14)}…{withdrawTxHash.slice(-6)}
+            </a>
+          )}
+          <br />
           <button type="button" onClick={reset} className="text-sm font-medium text-[#E85C1A]">
             Withdraw another deposit
           </button>

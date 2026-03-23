@@ -20,7 +20,12 @@ type PoolStats = {
 };
 
 export default function InvestPage() {
-  const { data: pool } = useCachedFetch<PoolStats>("/api/v1/investor/pool");
+  const { data: pool, error: poolError } = useCachedFetch<PoolStats>("/api/v1/investor/pool");
+
+  // ── DEBUG: Pool data ──────────────────────────────────────────────────
+  console.log("[Invest] pool data:", pool);
+  console.log("[Invest] pool fetch error:", poolError);
+  console.log("[Invest] depositAddress:", pool?.depositAddress);
 
   // WalletConnect state
   const { address, isConnected } = useAccount();
@@ -66,37 +71,51 @@ export default function InvestPage() {
     setStep("submitting");
     setErrorMsg(null);
 
+    console.log("[Invest] confirmDeposit called", { mode, num, txHash, isConnected, chainId });
+    console.log("[Invest] pool object at confirm:", JSON.stringify(pool, null, 2));
+
     try {
       let finalTxHash = txHash;
 
       // If using WalletConnect, send the transaction from the wallet
       if (mode === "wallet") {
+        console.log("[Invest] wallet mode — checking chain", { chainId, expected: sepolia.id });
         // Ensure Sepolia
         if (chainId !== sepolia.id) {
+          console.log("[Invest] switching chain to Sepolia...");
           await switchChainAsync({ chainId: sepolia.id });
         }
 
         // Send ETH to the pool/deposit address
         const depositAddr = pool?.depositAddress;
+        console.log("[Invest] depositAddr resolved:", depositAddr);
         if (!depositAddr) {
+          console.error("[Invest] ❌ depositAddress is falsy!", { pool, depositAddress: pool?.depositAddress });
           throw new Error("Pool deposit address not available. Please use manual mode.");
         }
 
-        finalTxHash = await sendTransactionAsync({
+        const txParams = {
           to: depositAddr as `0x${string}`,
           value: parseEther(num.toString()),
-        });
+        };
+        console.log("[Invest] sending transaction with params:", txParams);
+        finalTxHash = await sendTransactionAsync(txParams);
+        console.log("[Invest] ✅ transaction sent, hash:", finalTxHash);
       }
 
+      console.log("[Invest] recording deposit to backend...", { txHash: finalTxHash, amount: num.toString() });
       const res = await api.post<{ id: string }>("/api/v1/investor/deposit", {
         txHash: finalTxHash,
         amount: num.toString(),
       });
+      console.log("[Invest] backend response:", res);
       if (!res.success) throw new Error(res.message ?? "Failed to record deposit");
       setDepositId(res.data?.id ?? null);
       setTxHash(finalTxHash);
       setStep("done");
+      console.log("[Invest] ✅ deposit flow complete");
     } catch (err: unknown) {
+      console.error("[Invest] ❌ deposit error:", err);
       const message = err instanceof Error ? err.message : "An error occurred";
       // Handle user rejection
       if (message.includes("User rejected") || message.includes("user rejected")) {
