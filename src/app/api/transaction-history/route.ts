@@ -7,7 +7,7 @@
  *   - loanId: specific loan to get transactions for
  *   - Without loanId: returns all loans overview
  */
-import { proxyToBackend, jsonResponse } from '../_lib/proxy'
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
 /**
  * GET /api/transaction-history?loanId=xxx
@@ -19,33 +19,24 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const loanId = searchParams.get('loanId')
 
-  if (loanId) {
-    const result = await proxyToBackend({
-      backendPath: `/api/v1/loans/${loanId}/transactions`,
-      request,
-    })
+  // A specific loan gets its own transactions; without one, the chain overview.
+  const result = loanId
+    ? await proxyToBackend({
+        backendPath: `/api/v1/loans/${loanId}/transactions`,
+        request,
+      })
+    : await proxyToBackend({
+        backendPath: '/api/v1/loans/blockchain/status',
+        request,
+      })
 
-    if (result?.success) {
-      return jsonResponse(result.data)
-    }
-  } else {
-    // General overview — also try blockchain status
-    const result = await proxyToBackend({
-      backendPath: '/api/v1/loans/blockchain/status',
-      request,
-    })
-
-    if (result?.success) {
-      return jsonResponse(result.data)
-    }
+  if (result?.success) {
+    return jsonResponse(result.data)
   }
 
-  // Mock fallback
-  const mock = [
-    { id: 'tx_1', type: 'deposit', amount: '1000', status: 'completed', date: '2026-02-10', txHash: '0xabc123...' },
-    { id: 'tx_2', type: 'withdrawal', amount: '500', status: 'pending', date: '2026-02-11', txHash: '0xdef456...' },
-    { id: 'tx_3', type: 'loan_disbursement', amount: '5000', status: 'completed', date: '2026-02-09', txHash: '0xghi789...' },
-  ]
-
-  return jsonResponse(mock)
+  // No mock fallback. An unreachable backend or a rejected request has to
+  // surface as an error — returning invented figures here meant a failed call
+  // rendered as real platform totals.
+  if (!result) return errorResponse('Backend unavailable', 502)
+  return errorResponse(result.error ?? 'Request failed', result.status)
 }
