@@ -367,7 +367,7 @@ export default function HomePage() {
               }}>
                 Avelon is a decentralized lending protocol connecting liquidity providers
                 with borrowers through secure, audited smart contracts on the Ethereum
-                Sepolia network. AI-powered KYC ensures every borrower is verified.
+                Base Sepolia network. AI-powered KYC ensures every borrower is verified.
               </motion.p>
               <motion.div {...fadeUp(0.2)}>
                 <Link href="/register" style={{
@@ -387,7 +387,7 @@ export default function HomePage() {
             }}>
               {[
                 { label: "Collateral Type", value: "ETH" },
-                { label: "Network", value: "Sepolia" },
+                { label: "Network", value: "Base Sepolia" },
                 { label: "Platform Fee", value: "10%" },
                 { label: "Revenue Split", value: "90 / 10" },
               ].map(({ label, value }) => (
@@ -449,7 +449,7 @@ export default function HomePage() {
           color: "rgba(255,255,255,0.25)",
           position: "relative", zIndex: 2, width: "100%", textAlign: "right",
         }}>
-          © {new Date().getFullYear()} Avelon. Built on Ethereum Sepolia.
+          © {new Date().getFullYear()} Avelon. Built on Base Sepolia.
         </p>
       </footer>
     </>

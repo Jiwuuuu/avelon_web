@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
 import { useAccount } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
+import { EXPLORER_BASE, EXPLORER_NAME } from "@/config/chain";
 
 type Deposit = {
   id: string;
@@ -210,12 +211,12 @@ export default function WithdrawPage() {
           </p>
           {withdrawTxHash && (
             <a
-              href={`https://sepolia.etherscan.io/tx/${withdrawTxHash}`}
+              href={`${EXPLORER_BASE}/tx/${withdrawTxHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block text-xs font-mono text-[#E85C1A] hover:underline"
             >
-              View on Etherscan: {withdrawTxHash.slice(0, 14)}…{withdrawTxHash.slice(-6)}
+              View on {EXPLORER_NAME}: {withdrawTxHash.slice(0, 14)}…{withdrawTxHash.slice(-6)}
             </a>
           )}
           <br />

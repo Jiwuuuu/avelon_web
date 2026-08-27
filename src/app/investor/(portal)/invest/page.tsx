@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
 import { useAccount, useBalance, useChainId, useSwitchChain, useSendTransaction } from "wagmi";
 import { formatEther, parseEther } from "viem";
-import { sepolia } from "wagmi/chains";
+import { appChain, CHAIN_NAME } from "@/config/chain";
 import { useAppKit } from "@reown/appkit/react";
 
 // ETH is the only supported token — the pool is ETH-denominated
@@ -79,11 +79,11 @@ export default function InvestPage() {
 
       // If using WalletConnect, send the transaction from the wallet
       if (mode === "wallet") {
-        console.log("[Invest] wallet mode — checking chain", { chainId, expected: sepolia.id });
-        // Ensure Sepolia
-        if (chainId !== sepolia.id) {
-          console.log("[Invest] switching chain to Sepolia...");
-          await switchChainAsync({ chainId: sepolia.id });
+        console.log("[Invest] wallet mode — checking chain", { chainId, expected: appChain.id });
+        // Ensure the app chain
+        if (chainId !== appChain.id) {
+          console.log(`[Invest] switching chain to ${CHAIN_NAME}...`);
+          await switchChainAsync({ chainId: appChain.id });
         }
 
         // Send ETH to the pool/deposit address
@@ -245,7 +245,7 @@ export default function InvestPage() {
                 <p className="text-xs text-red-600 mt-1">Invalid transaction hash (must be 0x + 64 hex chars).</p>
               )}
               <p className="text-xs text-stone-400 mt-1">
-                Send ETH to the pool contract on Sepolia, then paste the tx hash here.
+                Send ETH to the pool contract on Base Sepolia, then paste the tx hash here.
               </p>
             </div>
           )}
