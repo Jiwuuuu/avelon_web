@@ -3,7 +3,7 @@
  * Proxies to: /api/v1/plans
  * List and view available loan plans.
  */
-import { proxyToBackend, jsonResponse } from '../_lib/proxy'
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
 /**
  * GET /api/loan-plans
@@ -20,12 +20,9 @@ export async function GET(request: Request) {
     return jsonResponse(result.data)
   }
 
-  // Mock fallback
-  const mock = [
-    { id: 'basic', name: 'Basic Loan', interestRate: 5.5, termMonths: 12, minAmount: '1000', maxAmount: '10000' },
-    { id: 'standard', name: 'Standard Loan', interestRate: 8.5, termMonths: 24, minAmount: '5000', maxAmount: '50000' },
-    { id: 'premium', name: 'Premium Loan', interestRate: 12, termMonths: 36, minAmount: '10000', maxAmount: '100000' },
-  ]
-
-  return jsonResponse(mock)
+  // No mock fallback. An unreachable backend or a rejected request has to
+  // surface as an error — returning invented figures here meant a failed call
+  // rendered as real platform totals.
+  if (!result) return errorResponse('Backend unavailable', 502)
+  return errorResponse(result.error ?? 'Request failed', result.status)
 }

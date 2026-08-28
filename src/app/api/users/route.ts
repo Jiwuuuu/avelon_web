@@ -24,16 +24,11 @@ export async function GET(request: Request) {
     return jsonResponse(result.data)
   }
 
-  // Mock fallback
-  const mock = {
-    users: [
-      { id: 'user_1', name: 'Will Garcia', email: 'will@example.com', role: 'admin', status: 'active' },
-      { id: 'user_2', name: 'Jane Doe', email: 'jane@example.com', role: 'user', status: 'verified' },
-    ],
-    meta: { total: 2, page: 1, limit: 20, totalPages: 1 },
-  }
-
-  return jsonResponse(mock)
+  // No mock fallback. An unreachable backend or a rejected request has to
+  // surface as an error — returning invented figures here meant a failed call
+  // rendered as real platform totals.
+  if (!result) return errorResponse('Backend unavailable', 502)
+  return errorResponse(result.error ?? 'Request failed', result.status)
 }
 
 /**

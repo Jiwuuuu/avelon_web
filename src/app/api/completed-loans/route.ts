@@ -3,7 +3,7 @@
  * Proxies to: /api/v1/admin/loans (filtered by status)
  * View completed/repaid loans (admin view).
  */
-import { proxyToBackend, jsonResponse } from '../_lib/proxy'
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
 /**
  * GET /api/completed-loans
@@ -26,15 +26,9 @@ export async function GET(request: Request) {
     return jsonResponse(result.data)
   }
 
-  // Mock fallback
-  const mock = {
-    loans: [
-      { id: 'loan_1', userId: 'user_1', amount: '5000', totalInterest: '625', status: 'repaid', completedDate: '2026-01-15' },
-      { id: 'loan_2', userId: 'user_2', amount: '10000', totalInterest: '1500', status: 'repaid', completedDate: '2026-01-20' },
-      { id: 'loan_3', userId: 'user_3', amount: '3000', totalInterest: '225', status: 'repaid', completedDate: '2026-02-05' },
-    ],
-    meta: { total: 3, page: 1, limit: 20, totalPages: 1 },
-  }
-
-  return jsonResponse(mock)
+  // No mock fallback. An unreachable backend or a rejected request has to
+  // surface as an error — returning invented figures here meant a failed call
+  // rendered as real platform totals.
+  if (!result) return errorResponse('Backend unavailable', 502)
+  return errorResponse(result.error ?? 'Request failed', result.status)
 }

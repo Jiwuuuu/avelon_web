@@ -7,7 +7,7 @@
  *   - loanId: specific loan to get payments for
  *   - Without loanId: returns all loans (caller should aggregate)
  */
-import { proxyToBackend, jsonResponse } from '../_lib/proxy'
+import { proxyToBackend, jsonResponse, errorResponse } from '../_lib/proxy'
 
 /**
  * GET /api/payment-history?loanId=xxx
@@ -19,34 +19,25 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const loanId = searchParams.get('loanId')
 
-  // If a specific loan ID is provided, get its transactions
-  if (loanId) {
-    const result = await proxyToBackend({
-      backendPath: `/api/v1/loans/${loanId}/transactions`,
-      request,
-    })
+  // A specific loan gets its own transactions; without one, the admin loan list.
+  const result = loanId
+    ? await proxyToBackend({
+        backendPath: `/api/v1/loans/${loanId}/transactions`,
+        request,
+      })
+    : await proxyToBackend({
+        backendPath: '/api/v1/admin/loans',
+        request,
+        query: searchParams.toString(),
+      })
 
-    if (result?.success) {
-      return jsonResponse(result.data)
-    }
-  } else {
-    // No specific loan — get all loans (admin view)
-    const result = await proxyToBackend({
-      backendPath: '/api/v1/admin/loans',
-      request,
-      query: searchParams.toString(),
-    })
-
-    if (result?.success) {
-      return jsonResponse(result.data)
-    }
+  if (result?.success) {
+    return jsonResponse(result.data)
   }
 
-  // Mock fallback
-  const mock = [
-    { id: 'pm_1', loanId: 'loan_1', amount: '500', dueDate: '2026-02-15', status: 'paid', paidDate: '2026-02-10' },
-    { id: 'pm_2', loanId: 'loan_2', amount: '750', dueDate: '2026-02-20', status: 'pending', paidDate: null },
-  ]
-
-  return jsonResponse(mock)
+  // No mock fallback. An unreachable backend or a rejected request has to
+  // surface as an error — returning invented figures here meant a failed call
+  // rendered as real platform totals.
+  if (!result) return errorResponse('Backend unavailable', 502)
+  return errorResponse(result.error ?? 'Request failed', result.status)
 }
