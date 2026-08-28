@@ -57,7 +57,7 @@ export default function Wallet() {
             Treasury overview and ETH market data
             {treasury?.network && treasury.network.name !== 'unknown' && (
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                {treasury.network.name === 'sepolia' ? 'Sepolia Testnet' : treasury.network.name}
+                {treasury.network.name === 'base-sepolia' ? 'Base Sepolia Testnet' : treasury.network.name}
               </span>
             )}
           </p>
@@ -78,7 +78,7 @@ export default function Wallet() {
             <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 p-8 text-white shadow-lg">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-sm uppercase tracking-wide text-white/60">Treasury Balance (Sepolia)</p>
+                  <p className="text-sm uppercase tracking-wide text-white/60">Treasury Balance (Base Sepolia)</p>
                   <p className="mt-2 text-4xl font-semibold">{treasuryBalanceETH.toFixed(4)} ETH</p>
                   {price && (
                     <p className={`text-sm ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>

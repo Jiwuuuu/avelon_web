@@ -2,6 +2,7 @@
 
 import { Blocks, Globe, Wallet, FileCode2, Database, Link2, AlertTriangle, RefreshCw } from "lucide-react"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
+import { EXPLORER_BASE } from "@/config/chain";
 
 type BlockchainData = {
     online: boolean
@@ -19,7 +20,7 @@ type BlockchainData = {
     _warning?: string
 }
 
-const ETHERSCAN_BASE = "https://sepolia.etherscan.io"
+const ETHERSCAN_BASE = EXPLORER_BASE
 
 function truncateAddress(addr: string | null) {
     if (!addr) return "—"

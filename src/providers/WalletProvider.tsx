@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiAdapter, projectId, walletConnectMetadata, networks } from '@/config/wagmi';
 import { createAppKit } from '@reown/appkit/react';
-import { sepolia } from '@reown/appkit/networks';
+import { appChain } from '../config/chain';
 import { WagmiProvider, type State } from 'wagmi';
 import type { ReactNode } from 'react';
 
@@ -12,7 +12,7 @@ createAppKit({
     projectId,
     adapters: [wagmiAdapter],
     networks,
-    defaultNetwork: sepolia,
+    defaultNetwork: appChain,
     metadata: walletConnectMetadata,
 });
 
