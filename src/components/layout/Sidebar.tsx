@@ -15,6 +15,7 @@ import {
     Bell,
     ScrollText,
     Blocks,
+    Activity,
     X,
 } from 'lucide-react'
 import Image from 'next/image'
@@ -41,6 +42,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, userName, i
         { id: 'deposits', icon: TrendingUp, label: 'Deposits' },
         { id: 'wallet', icon: Wallet, label: 'Wallet' },
         { id: 'blockchain', icon: Blocks, label: 'Blockchain' },
+        { id: 'volatility', icon: Activity, label: 'ETH Volatility' },
         { id: 'completed-loans', icon: CheckCircle, label: 'Completed Loans' },
         { id: 'notifications', icon: Bell, label: 'Notifications' },
         { id: 'logs', icon: ScrollText, label: 'Logs' },
