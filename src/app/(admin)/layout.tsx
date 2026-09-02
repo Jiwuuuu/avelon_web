@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import Sidebar from '@/components/layout/Sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { UserRole } from '@/types'
 
 export default function AdminLayout({
     children,
@@ -17,10 +18,10 @@ export default function AdminLayout({
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push('/login')
+        if (!isLoading && (!isAuthenticated || user?.role !== UserRole.ADMIN)) {
+            router.replace('/login')
         }
-    }, [isLoading, isAuthenticated, router])
+    }, [isLoading, isAuthenticated, user?.role, router])
 
     // Close sidebar on route change (mobile)
     useEffect(() => {
@@ -54,7 +55,7 @@ export default function AdminLayout({
         )
     }
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || user?.role !== UserRole.ADMIN) {
         return null
     }
 

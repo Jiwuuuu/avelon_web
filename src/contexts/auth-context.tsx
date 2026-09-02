@@ -38,7 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check session on mount
     useEffect(() => {
         const checkSession = async () => {
-            // First check localStorage for cached user
+            // User identity is always revalidated by the backend. No tokens or
+            // role data are persisted in browser-readable storage.
             const storedUser = getStoredUser();
             if (storedUser) {
                 setUserState(storedUser);
@@ -55,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUserState(null);
                 }
             } catch {
-                // Session check failed, use cached if available
+                // Session check failed
                 if (!storedUser) {
                     clearTokens();
                     setUserState(null);

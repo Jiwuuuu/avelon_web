@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   LayoutDashboard,
   PiggyBank,
@@ -15,6 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { UserRole } from "@/types";
 
 const nav = [
   { href: "/investor/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,7 +32,14 @@ const nav = [
 
 export function InvestorPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || user?.role !== UserRole.INVESTOR)) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, user?.role, router]);
 
   if (isLoading) {
     return (
@@ -40,7 +49,7 @@ export function InvestorPortalLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !user || user.role !== UserRole.INVESTOR) {
     // The proxy.ts middleware should have already redirected,
     // but as a safety net render nothing while the redirect resolves.
     return null;

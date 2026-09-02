@@ -28,7 +28,7 @@ export default function PoolOverviewPage() {
     <div className="max-w-4xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Liquidity pool overview</h1>
-        <p className="text-stone-500 text-sm mt-1">Transparency into aggregate lending pool performance.</p>
+        <p className="text-stone-500 text-sm mt-1">Research-preview metrics from prototype records; investor custody is disabled.</p>
       </div>
 
       {error && (
@@ -67,7 +67,7 @@ export default function PoolOverviewPage() {
         <div className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start gap-3">
           <Percent className="h-5 w-5 text-[#E85C1A] shrink-0" />
           <div>
-            <p className="text-xs text-stone-500 uppercase tracking-wide font-medium">Current APY</p>
+            <p className="text-xs text-stone-500 uppercase tracking-wide font-medium">Modelled APY</p>
             {stat(`${apyPct}%`)}
           </div>
         </div>

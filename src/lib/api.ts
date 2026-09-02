@@ -4,7 +4,9 @@
  */
 import type { AuthTokens, UserRole } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Browser requests stay same-origin. The Next.js backend gateway forwards them
+// to the private API URL and relays HttpOnly cookies as first-party cookies.
+const API_URL = '/api/backend';
 
 /**
  * API Response wrapper
@@ -19,45 +21,28 @@ interface ApiResponse<T> {
 /**
  * Auth storage keys
  */
-const AUTH_KEYS = {
-    ACCESS_TOKEN: 'avelon:accessToken',
-    REFRESH_TOKEN: 'avelon:refreshToken',
-    USER: 'avelon:user',
-} as const;
+let memoryAccessToken: string | null = null;
 
 /**
  * Get stored access token
  */
 export function getAccessToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(AUTH_KEYS.ACCESS_TOKEN);
-}
-
-/**
- * Get stored refresh token
- */
-export function getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(AUTH_KEYS.REFRESH_TOKEN);
+    return memoryAccessToken;
 }
 
 /**
  * Store auth tokens
  */
 export function setTokens(tokens: AuthTokens): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(AUTH_KEYS.ACCESS_TOKEN, tokens.accessToken);
-    localStorage.setItem(AUTH_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+    memoryAccessToken = tokens.accessToken;
 }
 
 /**
  * Clear auth tokens
  */
 export function clearTokens(): void {
+    memoryAccessToken = null;
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(AUTH_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(AUTH_KEYS.REFRESH_TOKEN);
-    localStorage.removeItem(AUTH_KEYS.USER);
     document.cookie = 'avelon:authenticated=; path=/; max-age=0'; // Fix proxy loop issue
 }
 
@@ -65,22 +50,14 @@ export function clearTokens(): void {
  * Store user data
  */
 export function setUser(user: SessionUser): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(AUTH_KEYS.USER, JSON.stringify(user));
+    void user;
 }
 
 /**
  * Get stored user
  */
 export function getStoredUser(): SessionUser | null {
-    if (typeof window === 'undefined') return null;
-    const userStr = localStorage.getItem(AUTH_KEYS.USER);
-    if (!userStr) return null;
-    try {
-        return JSON.parse(userStr);
-    } catch {
-        return null;
-    }
+    return null;
 }
 
 /**
@@ -118,6 +95,7 @@ async function fetchWithAuth<T>(
     const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include',
     });
 
     // Handle 401 - try refresh token
@@ -130,6 +108,7 @@ async function fetchWithAuth<T>(
             const retryResponse = await fetch(`${API_URL}${endpoint}`, {
                 ...options,
                 headers,
+                credentials: 'include',
             });
             return retryResponse.json();
         }
@@ -145,21 +124,19 @@ async function fetchWithAuth<T>(
  * Refresh access token
  */
 async function refreshAccessToken(): Promise<boolean> {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
-
     try {
         const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken }),
+            credentials: 'include',
+            body: JSON.stringify({}),
         });
 
         if (!response.ok) return false;
 
-        const result: ApiResponse<AuthTokens> = await response.json();
+        const result: ApiResponse<{ accessToken: string }> = await response.json();
         if (result.success && result.data) {
-            setTokens(result.data);
+            memoryAccessToken = result.data.accessToken;
             return true;
         }
         return false;
@@ -186,6 +163,7 @@ export async function login(email: string, password: string): Promise<ApiRespons
     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
     });
 

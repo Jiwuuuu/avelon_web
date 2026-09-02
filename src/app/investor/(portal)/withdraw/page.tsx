@@ -1,240 +1,160 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Fuel, Loader2, Wallet } from "lucide-react";
-import { api } from "@/lib/api";
+import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
-import { useAccount } from "wagmi";
-import { useAppKit } from "@reown/appkit/react";
-import { EXPLORER_BASE, EXPLORER_NAME } from "@/config/chain";
+import { ConnectNotice, StatusBanner, usePoolAction } from "@/components/investor/PoolAction";
 
-type Deposit = {
-  id: string;
-  amount: number;
-  txHash: string;
-  status: "PENDING" | "CONFIRMED" | "WITHDRAWN";
-  createdAt: string;
+type Position = {
+    shares: number;
+    currentValue: number;
+    totalDeposited: number;
+    totalYieldEarned: number;
+    claimableYield: number;
+    maxWithdrawable: number;
 };
 
-type WithdrawResponse = Deposit & { txHash: string };
-
 export default function WithdrawPage() {
-  const { data, loading, error, refresh } = useCachedFetch<Deposit[]>(
-    "/api/v1/investor/deposits?status=CONFIRMED"
-  );
+    const { data: position, loading, error, refresh } = useCachedFetch<Position>("/api/v1/investor/position");
+    const { status, run, isConnected } = usePoolAction();
+    const [shares, setShares] = useState("");
 
-  const { address, isConnected } = useAccount();
-  const { open: openAppKit } = useAppKit();
+    const busy = status.kind === "working";
+    const held = position?.shares ?? 0;
+    const parsed = Number(shares);
+    const valid = shares.trim() !== "" && Number.isFinite(parsed) && parsed > 0 && parsed <= held;
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [step, setStep] = useState<"form" | "submitting" | "done" | "error">("form");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [withdrawTxHash, setWithdrawTxHash] = useState<string | null>(null);
+    // Everything the investor owns may not be payable right now: the pool only has
+    // its idle ETH to hand out, the rest is with borrowers until they repay.
+    const shortOfLiquidity =
+        !!position && position.maxWithdrawable < position.currentValue - 1e-12;
 
-  const confirmedDeposits = data ?? [];
-  const totalWithdrawable = confirmedDeposits.reduce((s, d) => s + d.amount, 0);
+    const withdraw = async () => {
+        await run({
+            action: "withdraw",
+            shares,
+            recordPath: "/api/v1/investor/withdraw",
+            successMessage: "Withdrawal complete.",
+        });
+        setShares("");
+        refresh();
+    };
 
-  async function confirmWithdraw() {
-    if (!selectedId || !address) return;
-    setStep("submitting");
-    setErrorMsg(null);
+    const claim = async () => {
+        await run({
+            action: "claim",
+            recordPath: "/api/v1/investor/claim-yield",
+            successMessage: "Yield claimed. Your deposited principal stays invested.",
+        });
+        refresh();
+    };
 
-    console.log("[Withdraw] confirmWithdraw", { selectedId, walletAddress: address });
-
-    try {
-      const res = await api.post<WithdrawResponse>(`/api/v1/investor/withdraw/${selectedId}`, {
-        walletAddress: address,
-      });
-      console.log("[Withdraw] backend response:", res);
-      if (!res.success) throw new Error(res.message ?? "Withdrawal failed");
-      setWithdrawTxHash(res.data?.txHash ?? null);
-      setStep("done");
-      refresh();
-    } catch (err: unknown) {
-      console.error("[Withdraw] ❌ error:", err);
-      setErrorMsg(err instanceof Error ? err.message : "An error occurred");
-      setStep("error");
-    }
-  }
-
-  function reset() {
-    setStep("form");
-    setSelectedId(null);
-    setErrorMsg(null);
-    setWithdrawTxHash(null);
-  }
-
-  return (
-    <div className="max-w-xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900">Withdraw / Redeem</h1>
-        <p className="text-stone-500 text-sm mt-1">Redeem your confirmed liquidity deposits.</p>
-      </div>
-
-      {/* Wallet Connection Banner */}
-      {step === "form" && (
-        <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
-          {isConnected ? (
-            <>
-              <div className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="text-sm text-stone-600">
-                Withdraw to: <span className="font-mono text-xs">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => openAppKit()}
-                className="ml-auto text-xs font-medium text-[#E85C1A]"
-              >
-                Switch
-              </button>
-            </>
-          ) : (
-            <>
-              <Wallet className="h-4 w-4 text-stone-400" />
-              <span className="text-sm text-stone-500">Connect wallet to receive ETH</span>
-              <button
-                type="button"
-                onClick={() => openAppKit()}
-                className="ml-auto rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white"
-              >
-                Connect Wallet
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>
-      )}
-
-      {step === "form" && (
-        <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-5">
-          <div className="rounded-xl bg-stone-50 border border-stone-100 p-4">
-            <p className="text-xs text-stone-500">Total withdrawable</p>
-            {loading ? (
-              <div className="h-7 w-28 bg-stone-200 rounded animate-pulse mt-1" />
-            ) : (
-              <p className="text-xl font-bold font-mono mt-0.5">{totalWithdrawable.toFixed(6)} ETH</p>
-            )}
-          </div>
-
-          {loading && (
-            <div className="space-y-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-14 bg-stone-100 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          )}
-
-          {!loading && confirmedDeposits.length === 0 && (
-            <div className="text-center py-6 text-stone-400 text-sm">
-              No confirmed deposits available to withdraw.
-              <br />
-              <span className="text-xs">Deposits must be confirmed on-chain before withdrawal.</span>
-            </div>
-          )}
-
-          {confirmedDeposits.length > 0 && (
+    return (
+        <div className="max-w-xl space-y-6">
             <div>
-              <label className="text-sm font-medium text-stone-700 mb-2 block">Select deposit to withdraw</label>
-              <div className="space-y-2">
-                {confirmedDeposits.map((d) => (
-                  <label
-                    key={d.id}
-                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${
-                      selectedId === d.id
-                        ? "border-[#E85C1A] bg-[#FFF5F0]"
-                        : "border-stone-200 hover:border-stone-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="deposit"
-                      value={d.id}
-                      checked={selectedId === d.id}
-                      onChange={() => setSelectedId(d.id)}
-                      className="accent-[#E85C1A]"
+                <h1 className="text-2xl font-bold text-stone-900">Withdraw or claim</h1>
+                <p className="mt-1 text-sm text-stone-500">
+                    Redeem shares for ETH, or take just the yield and leave your principal working.
+                </p>
+            </div>
+
+            {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+                <h2 className="font-semibold text-stone-900">Your position</h2>
+                <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <Stat label="Current value" value={loading ? null : `${(position?.currentValue ?? 0).toFixed(6)} ETH`} />
+                    <Stat label="Shares held" value={loading ? null : (position?.shares ?? 0).toFixed(6)} />
+                    <Stat label="Yield available" value={loading ? null : `${(position?.claimableYield ?? 0).toFixed(6)} ETH`} />
+                    <Stat
+                        label="Withdrawable now"
+                        value={loading ? null : `${(position?.maxWithdrawable ?? 0).toFixed(6)} ETH`}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-mono font-semibold text-sm">{d.amount.toFixed(6)} ETH</p>
-                      <p className="text-xs text-stone-400">{new Date(d.createdAt).toLocaleDateString()}</p>
+                </dl>
+            </div>
+
+            {shortOfLiquidity && (
+                <div className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0" />
+                    <div>
+                        <p className="font-semibold">Part of your position is lent out</p>
+                        <p className="mt-1">
+                            The pool can pay {(position?.maxWithdrawable ?? 0).toFixed(6)} ETH right now. The rest is
+                            with borrowers and becomes available as they repay. There is no queue — withdrawals are
+                            first come, first served against idle ETH.
+                        </p>
                     </div>
-                    <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
-                      Confirmed
-                    </span>
-                  </label>
-                ))}
-              </div>
+                </div>
+            )}
+
+            <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+                <h2 className="font-semibold text-stone-900">Claim yield only</h2>
+                <p className="text-sm text-stone-600">
+                    Takes out what you have earned above your deposit and leaves the deposit invested. Doing nothing
+                    compounds it instead — unclaimed yield is already inside your shares.
+                </p>
+                <ConnectNotice isConnected={isConnected} />
+                <button
+                    type="button"
+                    onClick={claim}
+                    disabled={!isConnected || busy || (position?.claimableYield ?? 0) <= 0}
+                    className="w-full rounded-xl border border-stone-900 py-3 text-sm font-semibold text-stone-900 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400"
+                >
+                    {(position?.claimableYield ?? 0) > 0
+                        ? `Claim ${(position?.claimableYield ?? 0).toFixed(6)} ETH`
+                        : "No yield to claim yet"}
+                </button>
             </div>
-          )}
 
-          <div className="flex items-start gap-2 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-            <Fuel className="h-4 w-4 text-stone-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-stone-800">Gas fee</p>
-              <p className="text-xs text-stone-500 mt-0.5">Gas is paid by the platform. You receive the full deposit amount.</p>
+            <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+                <h2 className="font-semibold text-stone-900">Redeem shares</h2>
+
+                <label className="block text-sm">
+                    <span className="text-stone-600">Shares to redeem</span>
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        value={shares}
+                        onChange={(e) => setShares(e.target.value)}
+                        placeholder={held.toFixed(6)}
+                        disabled={busy}
+                        className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-3 font-mono focus:border-stone-900 focus:outline-none disabled:bg-stone-100"
+                    />
+                </label>
+                <button
+                    type="button"
+                    onClick={() => setShares(String(held))}
+                    disabled={busy || held <= 0}
+                    className="text-xs font-medium text-stone-500 underline disabled:no-underline disabled:opacity-50"
+                >
+                    Use my full balance
+                </button>
+
+                {shares.trim() !== "" && parsed > held && (
+                    <p className="text-sm text-red-600">You only hold {held.toFixed(6)} shares.</p>
+                )}
+
+                <StatusBanner status={status} />
+
+                <button
+                    type="button"
+                    onClick={withdraw}
+                    disabled={!isConnected || !valid || busy}
+                    className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
+                >
+                    {busy ? "Working…" : "Withdraw"}
+                </button>
             </div>
-          </div>
-
-          {!isConnected && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              Connect your wallet above to specify where ETH should be sent.
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={confirmWithdraw}
-            disabled={!selectedId || !isConnected || confirmedDeposits.length === 0}
-            className="w-full py-3 rounded-xl bg-stone-900 text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Confirm withdrawal
-          </button>
         </div>
-      )}
+    );
+}
 
-      {step === "submitting" && (
-        <div className="bg-white rounded-2xl border border-stone-200 p-10 shadow-sm text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-[#E85C1A] mx-auto" />
-          <p className="font-medium text-stone-900">Processing withdrawal…</p>
-          <p className="text-sm text-stone-500">Sending ETH to your wallet. This may take a moment.</p>
+function Stat({ label, value }: { label: string; value: string | null }) {
+    return (
+        <div className="rounded-xl bg-stone-50 p-4">
+            <dt className="text-stone-500">{label}</dt>
+            <dd className="mt-1 font-mono font-semibold">{value ?? "Loading…"}</dd>
         </div>
-      )}
-
-      {step === "done" && (
-        <div className="bg-white rounded-2xl border border-stone-200 p-10 shadow-sm text-center space-y-3">
-          <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
-          <p className="font-medium text-stone-900">Withdrawal complete</p>
-          <p className="text-sm text-stone-500">
-            ETH has been sent to your wallet. The transaction is confirmed on-chain.
-          </p>
-          {withdrawTxHash && (
-            <a
-              href={`${EXPLORER_BASE}/tx/${withdrawTxHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-xs font-mono text-[#E85C1A] hover:underline"
-            >
-              View on {EXPLORER_NAME}: {withdrawTxHash.slice(0, 14)}…{withdrawTxHash.slice(-6)}
-            </a>
-          )}
-          <br />
-          <button type="button" onClick={reset} className="text-sm font-medium text-[#E85C1A]">
-            Withdraw another deposit
-          </button>
-        </div>
-      )}
-
-      {step === "error" && (
-        <div className="bg-white rounded-2xl border border-red-200 p-6 shadow-sm space-y-3">
-          <p className="font-semibold text-red-700">Withdrawal failed</p>
-          <p className="text-sm text-red-600">{errorMsg}</p>
-          <button type="button" onClick={reset} className="text-sm font-medium text-[#E85C1A]">
-            Try again
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
 }

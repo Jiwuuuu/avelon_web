@@ -112,6 +112,8 @@ export interface CreateLoanPlanInput {
 // ── Loan ────────────────────────────────────────────
 
 export enum LoanStatus {
+    PENDING_APPROVAL = 'PENDING_APPROVAL',
+    REJECTED = 'REJECTED',
     PENDING_COLLATERAL = 'PENDING_COLLATERAL',
     COLLATERAL_DEPOSITED = 'COLLATERAL_DEPOSITED',
     ACTIVE = 'ACTIVE',
@@ -136,6 +138,7 @@ export interface Loan {
     contractAddress: string | null;
     contractLoanId: number | null;
     principal: number;
+    purpose: string;
     collateralRequired: number;
     collateralDeposited: number;
     duration: number;

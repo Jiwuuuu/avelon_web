@@ -7,6 +7,8 @@ import { LoanStatusSkeleton } from "@/components/skeletons"
 
 // ── Status & Health Badges ───────────────────────────────
 const statusStyles: Record<LoanStatusEnum, string> = {
+  [LoanStatusEnum.PENDING_APPROVAL]: "bg-amber-50 text-amber-700",
+  [LoanStatusEnum.REJECTED]: "bg-red-50 text-red-700",
   [LoanStatusEnum.PENDING_COLLATERAL]: "bg-yellow-50 text-yellow-700",
   [LoanStatusEnum.COLLATERAL_DEPOSITED]: "bg-blue-50 text-blue-700",
   [LoanStatusEnum.ACTIVE]: "bg-green-50 text-green-700",

@@ -1,16 +1,23 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Eye, X, Copy } from "lucide-react"
+import { Search, Eye, X, Copy, Check, Ban } from "lucide-react"
 import { LoanStatus, type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
+import { api } from "@/lib/api"
 import { TablePageSkeleton } from "@/components/skeletons"
 
 // Admin response extends base Loan with borrower wallet address
-type AdminLoan = Loan & { wallet?: { address: string } | null }
+type AdminLoan = Loan & {
+  wallet?: { address: string } | null
+  purpose?: string | null
+  rejectionReason?: string | null
+}
 
 // ── StatusBadge ────────────────────────────────────────────
 const statusStyles: Record<LoanStatus, string> = {
+  [LoanStatus.PENDING_APPROVAL]: "bg-amber-100 text-amber-800",
+  [LoanStatus.REJECTED]: "bg-red-100 text-red-800",
   [LoanStatus.PENDING_COLLATERAL]: "bg-yellow-100 text-yellow-800",
   [LoanStatus.COLLATERAL_DEPOSITED]: "bg-blue-100 text-blue-800",
   [LoanStatus.ACTIVE]: "bg-green-100 text-green-800",
@@ -80,6 +87,18 @@ function LoanDetailModal({
             <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="font-medium">{loan.duration} days</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Status</span><StatusBadge status={loan.status} /></div>
             <div className="flex justify-between"><span className="text-gray-500">Origination Fee</span><span className="font-medium">{loan.originationFee}%</span></div>
+            {loan.purpose && (
+              <div className="pt-2">
+                <span className="text-gray-500 block">Stated purpose</span>
+                <span className="font-medium">{loan.purpose}</span>
+              </div>
+            )}
+            {loan.rejectionReason && (
+              <div className="pt-2 rounded-lg bg-red-50 p-3">
+                <span className="text-red-500 block text-xs">Rejection reason</span>
+                <span className="font-medium text-red-800">{loan.rejectionReason}</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3 text-sm text-gray-700">
@@ -104,6 +123,57 @@ function LoanDetailModal({
   )
 }
 
+/**
+ * Reject needs a reason the borrower will read, so it gets its own step rather
+ * than firing straight off the table row.
+ */
+function RejectModal({
+  loan,
+  onCancel,
+  onConfirm,
+  busy,
+}: {
+  loan: AdminLoan | null
+  onCancel: () => void
+  onConfirm: (reason: string) => void
+  busy: boolean
+}) {
+  const [reason, setReason] = useState("")
+  if (!loan) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-lg mx-4 bg-white rounded-3xl p-8 shadow-2xl">
+        <h2 className="text-xl font-bold text-gray-900">Reject this application</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          {loan.principal} ETH over {loan.duration} days. The borrower sees this reason.
+        </p>
+
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={4}
+          placeholder="Why is this being rejected?"
+          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+        />
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={onCancel} disabled={busy} className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason.trim())}
+            disabled={busy || reason.trim().length < 5}
+            className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-300"
+          >
+            {busy ? "Rejecting…" : "Reject application"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────
 export default function LoanRequests() {
   const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: AdminLoan[] }>("/api/v1/admin/loans")
@@ -112,6 +182,29 @@ export default function LoanRequests() {
   const [statusFilter, setStatusFilter] = useState<"all" | LoanStatus>("all")
   const [selectedLoan, setSelectedLoan] = useState<AdminLoan | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [rejecting, setRejecting] = useState<AdminLoan | null>(null)
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  // Approval is the step that writes the loan on-chain, so it can fail for chain
+  // reasons and the message has to survive to the screen rather than a console.
+  const decide = async (loan: AdminLoan, verdict: "approve" | "reject", reason?: string) => {
+    setPendingId(loan.id)
+    setActionError(null)
+    try {
+      const res = await api.post<unknown>(
+        `/api/v1/admin/loans/${loan.id}/${verdict}`,
+        verdict === "reject" ? { reason } : {},
+      )
+      if (!res.success) throw new Error(res.error ?? `Could not ${verdict} the loan.`)
+      setRejecting(null)
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : `Could not ${verdict} the loan.`)
+    } finally {
+      setPendingId(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     return loans.filter((loan) => {
@@ -157,6 +250,10 @@ export default function LoanRequests() {
           </div>
         </div>
 
+        {actionError && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{actionError}</div>
+        )}
+
         {loading && <TablePageSkeleton columns={7} />}
 
         {error && (
@@ -200,12 +297,32 @@ export default function LoanRequests() {
                       <td className="px-6 py-4 text-sm text-gray-600">{loan.collateralDeposited} / {loan.collateralRequired} ETH</td>
                       <td className="px-6 py-4"><StatusBadge status={loan.status} /></td>
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => { setSelectedLoan(loan); setIsModalOpen(true) }}
-                          className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                        >
-                          View <Eye size={16} />
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => { setSelectedLoan(loan); setIsModalOpen(true) }}
+                            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                          >
+                            View <Eye size={16} />
+                          </button>
+                          {loan.status === LoanStatus.PENDING_APPROVAL && (
+                            <>
+                              <button
+                                onClick={() => decide(loan, "approve")}
+                                disabled={pendingId === loan.id}
+                                className="text-emerald-700 hover:text-emerald-900 font-medium flex items-center gap-1 disabled:text-gray-400"
+                              >
+                                {pendingId === loan.id ? "Working…" : <>Approve <Check size={16} /></>}
+                              </button>
+                              <button
+                                onClick={() => setRejecting(loan)}
+                                disabled={pendingId === loan.id}
+                                className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 disabled:text-gray-400"
+                              >
+                                Reject <Ban size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -220,6 +337,13 @@ export default function LoanRequests() {
         loan={selectedLoan}
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setSelectedLoan(null) }}
+      />
+
+      <RejectModal
+        loan={rejecting}
+        busy={pendingId === rejecting?.id}
+        onCancel={() => setRejecting(null)}
+        onConfirm={(reason) => rejecting && decide(rejecting, "reject", reason)}
       />
     </div>
   )
