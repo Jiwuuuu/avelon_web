@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
-import { ConnectNotice, StatusBanner, usePoolAction } from "@/components/investor/PoolAction";
+import { ConnectNotice, PendingNotice, StatusBanner, usePoolAction } from "@/components/investor/PoolAction";
 import { CHAIN_NAME } from "@/config/chain";
 
 type PoolStats = {
@@ -29,7 +29,7 @@ type Position = {
 export default function InvestPage() {
     const { data: pool, loading, error, refresh } = useCachedFetch<PoolStats>("/api/v1/investor/pool");
     const { data: position, refresh: refreshPosition } = useCachedFetch<Position>("/api/v1/investor/position");
-    const { status, run, isConnected } = usePoolAction();
+    const { status, run, isConnected, pending, retryPending } = usePoolAction();
     const [amount, setAmount] = useState("");
 
     const busy = status.kind === "working";
@@ -123,6 +123,7 @@ export default function InvestPage() {
                 </label>
 
                 <StatusBanner status={status} />
+                <PendingNotice pending={pending} onRetry={retryPending} busy={status.kind === "working"} />
 
                 <button
                     type="button"

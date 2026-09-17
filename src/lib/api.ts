@@ -3,6 +3,7 @@
  * Handles all HTTP requests with authentication
  */
 import type { AuthTokens, UserRole } from '@/types';
+import { errorMessage } from './api-errors';
 
 // Browser requests stay same-origin. The Next.js backend gateway forwards them
 // to the private API URL and relays HttpOnly cookies as first-party cookies.
@@ -110,14 +111,22 @@ async function fetchWithAuth<T>(
                 headers,
                 credentials: 'include',
             });
-            return retryResponse.json();
+            return normalize(await retryResponse.json());
         }
         // Refresh failed, clear tokens
         clearTokens();
         throw new Error('Session expired');
     }
 
-    return response.json();
+    return normalize(await response.json());
+}
+
+// ApiResponse promises a string error; the backend sends { code, message }
+function normalize<T>(body: ApiResponse<T>): ApiResponse<T> {
+    if (body && !body.success && body.error !== undefined && typeof body.error !== 'string') {
+        return { ...body, error: errorMessage(body, 'Request failed') };
+    }
+    return body;
 }
 
 /**

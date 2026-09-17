@@ -1,14 +1,7 @@
+import { forwardHeaders } from '@/lib/gateway';
+
 const BACKEND_URL = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
   .replace(/\/$/, '');
-
-function requestHeaders(request: Request): Headers {
-  const headers = new Headers();
-  for (const name of ['accept', 'authorization', 'content-type', 'cookie', 'origin', 'user-agent']) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-  return headers;
-}
 
 async function gateway(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
@@ -19,7 +12,7 @@ async function gateway(request: Request, context: { params: Promise<{ path: stri
   try {
     const upstream = await fetch(targetUrl, {
       method: request.method,
-      headers: requestHeaders(request),
+      headers: forwardHeaders(request),
       body: hasBody ? await request.arrayBuffer() : undefined,
       redirect: 'manual',
       cache: 'no-store',

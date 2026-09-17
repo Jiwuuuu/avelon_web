@@ -5,6 +5,8 @@ import { Search, Eye, X, Copy, Check, Ban } from "lucide-react"
 import { LoanStatus, type Loan } from "@/types"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { api } from "@/lib/api"
+import { errorMessage } from "@/lib/api-errors"
+import { followUpAction, type FollowUp } from "@/lib/admin-actions"
 import { TablePageSkeleton } from "@/components/skeletons"
 
 // Admin response extends base Loan with borrower wallet address
@@ -196,11 +198,27 @@ export default function LoanRequests() {
         `/api/v1/admin/loans/${loan.id}/${verdict}`,
         verdict === "reject" ? { reason } : {},
       )
-      if (!res.success) throw new Error(res.error ?? `Could not ${verdict} the loan.`)
+      if (!res.success) throw new Error(errorMessage(res, `Could not ${verdict} the loan.`))
       setRejecting(null)
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : `Could not ${verdict} the loan.`)
+    } finally {
+      setPendingId(null)
+    }
+  }
+
+  // Retries and closing steps for loans the backend left waiting on an admin
+  const runFollowUp = async (loan: AdminLoan, action: FollowUp) => {
+    if (action.confirm && !window.confirm(action.confirm)) return
+    setPendingId(loan.id)
+    setActionError(null)
+    try {
+      const res = await api.post<unknown>(`/api/v1/admin/loans/${loan.id}/${action.kind}`, {})
+      if (!res.success) throw new Error(errorMessage(res, `${action.label} failed.`))
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : `${action.label} failed.`)
     } finally {
       setPendingId(null)
     }
@@ -322,6 +340,19 @@ export default function LoanRequests() {
                               </button>
                             </>
                           )}
+                          {(() => {
+                            const action = followUpAction(loan)
+                            if (!action) return null
+                            return (
+                              <button
+                                onClick={() => runFollowUp(loan, action)}
+                                disabled={pendingId === loan.id}
+                                className={`font-medium disabled:text-gray-400 ${action.kind === "liquidate" ? "text-red-600 hover:text-red-800" : "text-indigo-600 hover:text-indigo-800"}`}
+                              >
+                                {pendingId === loan.id ? "Working…" : action.label}
+                              </button>
+                            )
+                          })()}
                         </div>
                       </td>
                     </tr>
