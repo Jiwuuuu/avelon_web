@@ -8,6 +8,8 @@ import { TablePageSkeleton } from "@/components/skeletons"
 
 // ── Badges ─────────────────────────────────────────────────
 const statusStyles: Record<LoanStatus, string> = {
+  [LoanStatus.PENDING_APPROVAL]: "bg-amber-100 text-amber-700",
+  [LoanStatus.REJECTED]: "bg-red-100 text-red-700",
   [LoanStatus.PENDING_COLLATERAL]: "bg-yellow-100 text-yellow-700",
   [LoanStatus.COLLATERAL_DEPOSITED]: "bg-blue-100 text-blue-700",
   [LoanStatus.ACTIVE]: "bg-green-100 text-green-700",

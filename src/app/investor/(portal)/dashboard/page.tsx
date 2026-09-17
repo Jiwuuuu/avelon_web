@@ -46,12 +46,13 @@ function txLabel(type: string): string {
   if (type === "DEPOSIT") return "Pool deposit";
   if (type === "WITHDRAWAL") return "Withdrawal";
   if (type === "YIELD_EARNED") return "Yield accrual";
+  if (type === "YIELD_CLAIMED") return "Yield claimed";
   if (type === "FEE_COLLECTED") return "Platform fee";
   return type;
 }
 
 function txSign(type: string): string {
-  return type === "WITHDRAWAL" || type === "FEE_COLLECTED" ? "−" : "+";
+  return type === "WITHDRAWAL" || type === "YIELD_CLAIMED" || type === "FEE_COLLECTED" ? "−" : "+";
 }
 
 export default function InvestorDashboardPage() {
@@ -63,7 +64,8 @@ export default function InvestorDashboardPage() {
   const recentTransactions = data?.recentTransactions ?? [];
 
   const utilizationPct = pool ? pool.utilizationRate * 100 : 0;
-  const apyPct = pool ? (pool.apy * 100).toFixed(1) : "—";
+  // Backend returns realised interest over pool size, not a forecast rate.
+  const apyPct = pool ? (pool.apy * 100).toFixed(2) : "—";
 
   // Derive pool share % from deposited vs tvl
   const poolShare = pool && pool.tvl > 0 ? ((totalDeposited / pool.tvl) * 100).toFixed(2) : "0.00";
@@ -199,12 +201,12 @@ export default function InvestorDashboardPage() {
         <section className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <LineChart className="h-4 w-4 text-[#E85C1A]" />
-            <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Pool APY</h2>
+            <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Interest earned</h2>
           </div>
           <div className="flex items-center justify-center h-36">
             <div className="text-center">
               <p className="text-5xl font-bold text-[#E85C1A]">{apyPct}%</p>
-              <p className="text-sm text-stone-500 mt-2">Current annualised yield</p>
+              <p className="text-sm text-stone-500 mt-2">Interest received to date, over pool size</p>
               <p className="text-xs text-stone-400 mt-1">
                 {pool ? `${pool.totalInvestors} investors · ${pool.activeLoans} active loans` : "Loading…"}
               </p>

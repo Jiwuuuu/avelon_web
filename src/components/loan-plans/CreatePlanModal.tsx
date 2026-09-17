@@ -29,10 +29,21 @@ export function CreatePlanModal({ onClose, onSuccess, onError, invalidate, refre
       maxAmount: Number(data.get("maxAmount")) || 0,
       durationOptions: (data.get("durationOptions") as string).split(",").map((d) => Number(d.trim())).filter(Boolean),
       interestRate: Number(data.get("interestRate")) || 0,
-      interestType: (data.get("interestType") as InterestType) || InterestType.FLAT,
-      collateralRatio: Number(data.get("collateralRatio")) || 150,
+      interestType: InterestType.FLAT,
+      collateralRatio: Number(data.get("collateralRatio")) || 35,
       originationFee: Number(data.get("originationFee")) || 0,
       gracePeriodDays: Number(data.get("gracePeriodDays")) || 0,
+    }
+
+    if (input.minAmount <= 0 || input.maxAmount <= 0 || input.minAmount > input.maxAmount) {
+      onError("Enter a valid amount range; minimum cannot exceed maximum.")
+      setIsSubmitting(false)
+      return
+    }
+    if (!input.durationOptions.length || new Set(input.durationOptions).size !== input.durationOptions.length) {
+      onError("Enter at least one unique duration in days.")
+      setIsSubmitting(false)
+      return
     }
 
     try {
@@ -43,6 +54,8 @@ export function CreatePlanModal({ onClose, onSuccess, onError, invalidate, refre
         onClose()
         form.reset()
         onSuccess(`"${input.name}" created successfully.`)
+      } else {
+        onError(result.message || "The backend rejected this plan configuration.")
       }
     } catch {
       onError("Failed to create plan. Please try again.")
@@ -71,27 +84,24 @@ export function CreatePlanModal({ onClose, onSuccess, onError, invalidate, refre
           </FormRow>
 
           <FormRow>
-            <FormField name="minAmount" label="Min Amount (ETH) *" type="number" required min={0} step={0.01} placeholder="0.1" />
-            <FormField name="maxAmount" label="Max Amount (ETH) *" type="number" required min={0} step={0.01} placeholder="10" />
+            <FormField name="minAmount" label="Min Amount (ETH) *" type="number" required min={0.000001} step={0.000001} placeholder="0.1" />
+            <FormField name="maxAmount" label="Max Amount (ETH) *" type="number" required min={0.000001} step={0.000001} placeholder="10" />
           </FormRow>
 
           <FormRow>
             <FormField name="durationOptions" label="Duration Options (days, comma-sep) *" type="text" required placeholder="30, 60, 90" />
-            <FormField name="interestRate" label="Interest Rate (%) *" type="number" required min={0} step={0.1} placeholder="5.0" />
+            <FormField name="interestRate" label="Annual Interest Rate (%) *" type="number" required min={0.1} max={100} step={0.1} placeholder="5.0" />
           </FormRow>
 
           <FormRow>
-            <FormField name="collateralRatio" label="Collateral Ratio (%) *" type="number" required min={100} placeholder="150" />
-            <FormField name="originationFee" label="Origination Fee (%) *" type="number" required min={0} step={0.1} placeholder="1.0" />
+            <FormField name="collateralRatio" label="Borrower Stake Ratio (%) *" type="number" required min={35} max={200} placeholder="35" />
+            <FormField name="originationFee" label="Origination Fee (%) *" type="number" required min={0} max={100} step={0.1} placeholder="1.0" />
           </FormRow>
 
           <FormRow>
             <label className="text-sm font-medium text-gray-700">
               Interest Type
-              <select name="interestType" className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100" defaultValue={InterestType.FLAT}>
-                <option value={InterestType.FLAT}>Flat</option>
-                <option value={InterestType.COMPOUND}>Compound</option>
-              </select>
+              <input value="Flat (annual, prorated by term)" readOnly className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600" />
             </label>
             <FormField name="gracePeriodDays" label="Grace Period (days)" type="number" min={0} placeholder="7" />
           </FormRow>

@@ -2,8 +2,6 @@
 
 import { PieChart } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
-import { api } from "@/lib/api";
-import { useState } from "react";
 
 type EarningsData = {
   totalEarned: number;
@@ -15,8 +13,6 @@ const PLATFORM_FEE = 10;
 
 export default function EarningsPage() {
   const { data, loading, error } = useCachedFetch<EarningsData>("/api/v1/investor/earnings");
-  const [claiming, setClaiming] = useState(false);
-  const [claimMsg, setClaimMsg] = useState<string | null>(null);
 
   const total = data?.totalEarned ?? 0;
   const claimable = data?.claimable ?? 0;
@@ -29,23 +25,11 @@ export default function EarningsPage() {
   const bars = monthly.length > 0 ? monthly.map((m) => m.earned) : [];
   const maxBar = bars.length > 0 ? Math.max(...bars) : 1;
 
-  async function claim() {
-    setClaiming(true);
-    setClaimMsg(null);
-    try {
-      // Claim is a future feature; for now show a message
-      await new Promise((r) => setTimeout(r, 1000));
-      setClaimMsg("Claim request submitted. Yield will be transferred to your wallet shortly.");
-    } finally {
-      setClaiming(false);
-    }
-  }
-
   return (
     <div className="max-w-4xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Earnings and returns</h1>
-        <p className="text-stone-500 text-sm mt-1">Profit, fee breakdown, and historical distributions.</p>
+        <p className="text-stone-500 text-sm mt-1">Research-preview figures from recorded prototype data; not a claimable financial balance.</p>
       </div>
 
       {error && (
@@ -123,19 +107,12 @@ export default function EarningsPage() {
         </section>
       )}
 
-      {claimMsg && (
-        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
-          {claimMsg}
-        </div>
-      )}
-
       <button
         type="button"
-        onClick={claim}
-        disabled={claiming || claimable <= 0}
+        disabled
         className="px-6 py-3 rounded-xl bg-[#E85C1A] text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {claiming ? "Submitting…" : `Claim ${claimable.toFixed(6)} ETH`}
+        Yield claims unavailable — audited pool contract required
       </button>
     </div>
   );

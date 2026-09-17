@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Search, Eye, X, ChevronLeft, ChevronRight, Ban, ShieldCheck, Loader2, CheckCircle, XCircle } from "lucide-react"
 import { UserStatus, type UserProfile } from "@/types"
 import { api } from "@/lib/api"
+import { userStatusBody } from "@/lib/admin-actions"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { UsersSkeleton } from "@/components/skeletons"
 
@@ -368,7 +369,7 @@ export default function Users() {
     try {
       const result = await api.put<{ message: string }>(
         `/api/v1/admin/users/${selectedUser.id}/status`,
-        { status: UserStatus.SUSPENDED },
+        userStatusBody('suspend'),
       )
       if (result.success) {
         invalidate()
@@ -389,7 +390,7 @@ export default function Users() {
     try {
       const result = await api.put<{ message: string }>(
         `/api/v1/admin/users/${selectedUser.id}/status`,
-        { status: UserStatus.APPROVED },
+        userStatusBody('restore'),
       )
       if (result.success) {
         invalidate()

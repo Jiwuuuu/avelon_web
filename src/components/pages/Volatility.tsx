@@ -5,19 +5,12 @@ import { useCachedFetch } from "@/lib/use-cached-fetch"
 
 type PriceBand = { lower: number; upper: number }
 
-type PlanRisk = {
-    planId: string
-    planName: string
-    collateralRatio: number
-    stakeRatioBps: number
-    priceDropToLiquidation: number
-    probability: number
-}
-
 type VolatilityData = {
     online: boolean
     horizonDays: number
-    minRatioBps?: number
+    advisoryOnly?: boolean
+    liquidationEnabled?: boolean
+    economicNote?: string
     currentPricePHP?: number
     priceSource?: "coingecko" | "snapshot"
     model?: "lstm" | "ewma_fallback"
@@ -34,7 +27,6 @@ type VolatilityData = {
         trained_points?: number
         horizon_hours?: number
     }
-    plans: PlanRisk[]
 }
 
 const RISK_STYLES: Record<string, string> = {
@@ -123,7 +115,7 @@ export default function Volatility() {
                     <div className="flex flex-col gap-2">
                         <h1 className="text-3xl font-bold text-gray-900">ETH Volatility</h1>
                         <p className="text-sm text-gray-500">
-                            LSTM forecast of Ethereum price volatility and the liquidation risk it implies per loan plan.
+                            Advisory LSTM research forecast for ETH/PHP market volatility.
                         </p>
                     </div>
                     <button
@@ -165,6 +157,12 @@ export default function Volatility() {
 
                 {!loading && !error && data?.online && (
                     <>
+                        <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                            <AlertTriangle size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-blue-900">
+                                <strong>Advisory research only.</strong> {data.economicNote ?? "ETH volatility cannot change an ETH-collateral/ETH-debt ratio and does not trigger liquidation."}
+                            </p>
+                        </div>
                         {data.priceSource === "snapshot" && (
                             <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 p-4">
                                 <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
@@ -248,50 +246,11 @@ export default function Volatility() {
                             <PriceChart prices={data.recentPrices ?? []} band={data.priceRange95} />
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                            <div className="border-b border-gray-100 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900">Liquidation exposure by plan</h2>
-                                <p className="text-sm text-gray-500">
-                                    Chance a borrower&apos;s stake falls below the {((data.minRatioBps ?? 3500) / 100).toFixed(0)}%
-                                    floor within {data.horizonDays} days.
-                                </p>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-400">
-                                        <tr>
-                                            <th className="px-6 py-3 font-medium">Plan</th>
-                                            <th className="px-6 py-3 font-medium">Stake</th>
-                                            <th className="px-6 py-3 font-medium">Fall that triggers liquidation</th>
-                                            <th className="px-6 py-3 font-medium">Probability</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {data.plans.map((plan) => (
-                                            <tr key={plan.planId} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 font-medium text-gray-900">{plan.planName}</td>
-                                                <td className="px-6 py-4 text-gray-600">{plan.collateralRatio}%</td>
-                                                <td className="px-6 py-4 text-gray-600">
-                                                    {plan.priceDropToLiquidation > 0
-                                                        ? percent(plan.priceDropToLiquidation)
-                                                        : "already at the floor"}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-1.5 w-24 rounded-full bg-gray-100">
-                                                            <div
-                                                                className={`h-full rounded-full ${plan.probability > 0.5 ? "bg-red-500" : plan.probability > 0.1 ? "bg-orange-500" : "bg-green-500"}`}
-                                                                style={{ width: `${Math.min(100, plan.probability * 100)}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="font-medium text-gray-900">{percent(plan.probability)}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                            <h2 className="text-lg font-semibold text-gray-900">Risk-policy boundary</h2>
+                            <p className="mt-2 text-sm text-gray-600">
+                                The forecast can support research discussion and administrator awareness. Smart-contract liquidation is limited to an objectively overdue default; predicted price movement and owner-supplied ratios are not enforcement inputs.
+                            </p>
                         </div>
 
                         {data.modelMetadata?.baselines && (
