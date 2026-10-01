@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
-import { ConnectNotice, PendingNotice, StatusBanner, usePoolAction } from "@/components/investor/PoolAction";
+import { PendingNotice, StatusBanner, usePoolAction, WalletNotice } from "@/components/investor/PoolAction";
 import { CHAIN_NAME } from "@/config/chain";
 
 type PoolStats = {
@@ -29,7 +29,7 @@ type Position = {
 export default function InvestPage() {
     const { data: pool, loading, error, refresh } = useCachedFetch<PoolStats>("/api/v1/investor/pool");
     const { data: position, refresh: refreshPosition } = useCachedFetch<Position>("/api/v1/investor/position");
-    const { status, run, isConnected, pending, retryPending } = usePoolAction();
+    const { status, run, ready, wallet, pending, retryPending } = usePoolAction();
     const [amount, setAmount] = useState("");
 
     const busy = status.kind === "working";
@@ -106,7 +106,7 @@ export default function InvestPage() {
 
             <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
                 <h2 className="font-semibold text-stone-900">Deposit</h2>
-                <ConnectNotice isConnected={isConnected} />
+                <WalletNotice wallet={wallet} onLinked={refreshPosition} />
 
                 <label className="block text-sm">
                     <span className="text-stone-600">Amount in ETH</span>
@@ -128,7 +128,7 @@ export default function InvestPage() {
                 <button
                     type="button"
                     onClick={deposit}
-                    disabled={!isConnected || !valid || busy}
+                    disabled={!ready || !valid || busy}
                     className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
                 >
                     {busy ? "Working…" : "Deposit into pool"}

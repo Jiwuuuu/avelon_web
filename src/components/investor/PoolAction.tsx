@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAccount, useChainId, useConfig, useSendTransaction, useSwitchChain } from "wagmi";
+import { useCallback, useEffect, useState } from "react";
+import { useAccount, useChainId, useConfig, useSendTransaction, useSignMessage, useSwitchChain } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { parseEther } from "viem";
-import { AlertTriangle, Loader2, Wallet } from "lucide-react";
+import { useAppKit } from "@reown/appkit/react";
+import { AlertTriangle, CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/api-errors";
 import { recordWithRetry } from "@/lib/record-with-retry";
@@ -34,6 +35,72 @@ function writePending(value: PendingPoolTx | null) {
 
 type CallData = { to: `0x${string}`; data: `0x${string}`; value: string; chainId: number };
 
+type LinkedWallet = { address: string; chainId: number; isVerified: boolean };
+
+// The backend only credits pool transactions from a wallet linked to the account,
+// so linking comes first: one signed message, free, nothing sent.
+export function useWalletLink() {
+    const { address, isConnected } = useAccount();
+    const { open } = useAppKit();
+    const { signMessageAsync } = useSignMessage();
+    const [linked, setLinked] = useState<string[] | null>(null);
+    const [linking, setLinking] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const load = useCallback(async () => {
+        const res = await api.get<LinkedWallet[]>("/api/v1/wallets");
+        setLinked(
+            res.success && res.data
+                ? res.data.filter((w) => w.isVerified && w.chainId === appChain.id).map((w) => w.address.toLowerCase())
+                : [],
+        );
+    }, []);
+
+    useEffect(() => {
+        void load();
+    }, [load]);
+
+    const isLinked = !!address && !!linked?.includes(address.toLowerCase());
+
+    const link = async (): Promise<boolean> => {
+        if (!address) return false;
+        setLinking(true);
+        setError(null);
+        try {
+            const lower = address.toLowerCase();
+            const challenge = await api.post<{ message: string }>("/api/v1/wallets/connect", {
+                address: lower,
+                chainId: appChain.id,
+            });
+            if (!challenge.success || !challenge.data) {
+                throw new Error(errorMessage(challenge, "Could not start linking this wallet."));
+            }
+            const signature = await signMessageAsync({ message: challenge.data.message });
+            const verified = await api.post<unknown>("/api/v1/wallets/verify", {
+                address: lower,
+                chainId: appChain.id,
+                signature,
+                message: challenge.data.message,
+            });
+            if (!verified.success) {
+                throw new Error(errorMessage(verified, "Could not link this wallet."));
+            }
+            await load();
+            return true;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Could not link this wallet.";
+            setError(/user rejected|denied/i.test(message) ? "You cancelled the signature." : message);
+            return false;
+        } finally {
+            setLinking(false);
+        }
+    };
+
+    return { address, isConnected, isLinked, checking: linked === null, linking, error, link, open: () => open() };
+}
+
+export type WalletLink = ReturnType<typeof useWalletLink>;
+
 type Status =
     | { kind: "idle" }
     | { kind: "working"; step: string }
@@ -49,7 +116,8 @@ type Status =
  * which is why a wallet is mandatory rather than a convenience.
  */
 export function usePoolAction() {
-    const { address, isConnected } = useAccount();
+    const wallet = useWalletLink();
+    const { address, isConnected, isLinked } = wallet;
     const chainId = useChainId();
     const { switchChainAsync } = useSwitchChain();
     const { sendTransactionAsync } = useSendTransaction();
@@ -104,6 +172,11 @@ export function usePoolAction() {
             setStatus({ kind: "error", message: "Connect a wallet first." });
             return;
         }
+        // A transaction from an unlinked wallet would land but never be credited
+        if (!isLinked) {
+            setStatus({ kind: "error", message: "Link this wallet to your account first." });
+            return;
+        }
 
         try {
             if (chainId !== appChain.id) {
@@ -143,7 +216,7 @@ export function usePoolAction() {
         }
     };
 
-    return { status, setStatus, run, address, isConnected, pending, retryPending };
+    return { status, setStatus, run, address, isConnected, ready: isConnected && isLinked, wallet, pending, retryPending };
 }
 
 export function StatusBanner({ status }: { status: Status }) {
@@ -201,15 +274,75 @@ export function PendingNotice({
     );
 }
 
-export function ConnectNotice({ isConnected }: { isConnected: boolean }) {
-    if (isConnected) return null;
+const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+// Connect, then link, then a one-line reminder of which wallet signs.
+export function WalletNotice({ wallet, onLinked }: { wallet: WalletLink; onLinked?: () => void }) {
+    const { address, isConnected, isLinked, checking, linking, error, link, open } = wallet;
+
+    if (!isConnected || !address) {
+        return (
+            <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+                <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                    <p>
+                        Connect a wallet on {CHAIN_NAME} to continue. Avelon holds no investor keys, so every deposit,
+                        withdrawal and yield claim is signed by you.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={open}
+                        className="mt-3 rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white"
+                    >
+                        Connect wallet
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (checking) return null;
+
+    if (!isLinked) {
+        return (
+            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                    <p className="font-semibold">Link {short(address)} to your account</p>
+                    <p className="mt-1">
+                        Your wallet will ask you to sign a message. It proves the wallet is yours, costs nothing and
+                        sends nothing.
+                    </p>
+                    {error && <p className="mt-2 text-red-700">{error}</p>}
+                    <div className="mt-3 flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (await link()) onLinked?.();
+                            }}
+                            disabled={linking}
+                            className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                            {linking ? "Waiting for your wallet…" : "Link wallet"}
+                        </button>
+                        <button type="button" onClick={open} className="text-xs font-medium text-amber-900 underline">
+                            Use another wallet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
-            <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 text-xs text-stone-500">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <span>
-                Connect a wallet on {CHAIN_NAME} to continue. Avelon holds no investor keys, so every deposit,
-                withdrawal and yield claim is signed by you.
+                Signing with <span className="font-mono text-stone-700">{short(address)}</span>
             </span>
+            <button type="button" onClick={open} className="ml-auto font-medium text-[#E85C1A]">
+                Change
+            </button>
         </div>
     );
 }
