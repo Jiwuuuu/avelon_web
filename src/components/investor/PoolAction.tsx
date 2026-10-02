@@ -9,6 +9,7 @@ import { AlertTriangle, CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/api-errors";
 import { recordWithRetry } from "@/lib/record-with-retry";
+import { normalizeAmount, poolErrorMessage } from "@/lib/deposit-limits";
 import { appChain, CHAIN_NAME } from "@/config/chain";
 
 // A sent transaction the backend has not filed yet, kept across reloads
@@ -185,7 +186,12 @@ export function usePoolAction() {
             }
 
             setStatus({ kind: "working", step: "Preparing transaction…" });
-            const query = opts.shares ? `&shares=${encodeURIComponent(opts.shares)}` : "";
+            // A deposit amount is checked against the pool limits before the wallet opens
+            const query = opts.shares
+                ? `&shares=${encodeURIComponent(opts.shares)}`
+                : opts.amountEth
+                  ? `&amount=${encodeURIComponent(normalizeAmount(opts.amountEth))}`
+                  : "";
             const prepared = await api.get<CallData>(
                 `/api/v1/investor/calldata?action=${opts.action}${query}`,
             );
@@ -197,7 +203,7 @@ export function usePoolAction() {
             const txHash = await sendTransactionAsync({
                 to: prepared.data.to,
                 data: prepared.data.data,
-                value: opts.amountEth ? parseEther(opts.amountEth) : undefined,
+                value: opts.amountEth ? parseEther(normalizeAmount(opts.amountEth)) : undefined,
             });
 
             // The backend reads the amount and shares off the pool's own event, so
@@ -211,7 +217,9 @@ export function usePoolAction() {
             // Wallet rejections are a normal outcome, not a fault worth alarming about.
             setStatus({
                 kind: "error",
-                message: /user rejected|denied/i.test(message) ? "You cancelled the transaction." : message,
+                message:
+                    poolErrorMessage(err) ??
+                    (/user rejected|denied/i.test(message) ? "You cancelled the transaction." : message),
             });
         }
     };

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useBalance } from "wagmi";
 import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
+import { depositError } from "@/lib/deposit-limits";
 import { PendingNotice, StatusBanner, usePoolAction, WalletNotice } from "@/components/investor/PoolAction";
-import { CHAIN_NAME } from "@/config/chain";
+import { appChain, CHAIN_NAME } from "@/config/chain";
 
 type PoolStats = {
     tvl: number;
@@ -17,6 +19,9 @@ type PoolStats = {
     poolAddress: string | null;
     custodyMode: string;
     depositsEnabled: boolean;
+    // Decimal ETH strings; null when the pool predates the limits
+    minDeposit: string | null;
+    maxDeposit: string | null;
 };
 
 type Position = {
@@ -29,12 +34,19 @@ type Position = {
 export default function InvestPage() {
     const { data: pool, loading, error, refresh } = useCachedFetch<PoolStats>("/api/v1/investor/pool");
     const { data: position, refresh: refreshPosition } = useCachedFetch<Position>("/api/v1/investor/position");
-    const { status, run, ready, wallet, pending, retryPending } = usePoolAction();
+    const { status, run, ready, wallet, pending, retryPending, address } = usePoolAction();
     const [amount, setAmount] = useState("");
+    const balance = useBalance({ address, chainId: appChain.id, query: { enabled: !!address } });
 
     const busy = status.kind === "working";
-    const parsed = Number(amount);
-    const valid = amount.trim() !== "" && Number.isFinite(parsed) && parsed > 0;
+    const problem = depositError(
+        amount,
+        { minDeposit: pool?.minDeposit ?? null, maxDeposit: pool?.maxDeposit ?? null },
+        // Only a balance that was actually read; see depositError
+        balance.isSuccess ? balance.data.value : undefined,
+    );
+    const valid = problem === null;
+    const showProblem = amount.trim() !== "" && problem !== null;
 
     const deposit = async () => {
         await run({
@@ -112,15 +124,28 @@ export default function InvestPage() {
                     <span className="text-stone-600">Amount in ETH</span>
                     <input
                         type="number"
-                        min="0"
+                        min={pool?.minDeposit ?? "0"}
+                        max={pool?.maxDeposit ?? undefined}
                         step="0.001"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="1.0"
                         disabled={busy}
-                        className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-3 font-mono focus:border-stone-900 focus:outline-none disabled:bg-stone-100"
+                        aria-invalid={showProblem}
+                        aria-describedby="deposit-limits"
+                        className={`mt-1 w-full rounded-xl border px-4 py-3 font-mono focus:outline-none disabled:bg-stone-100 ${
+                            showProblem ? "border-red-400 focus:border-red-500" : "border-stone-300 focus:border-stone-900"
+                        }`}
                     />
                 </label>
+                <div id="deposit-limits" className="-mt-2 space-y-1 text-xs">
+                    {pool?.minDeposit && pool?.maxDeposit && (
+                        <p className="text-stone-500">
+                            Min {pool.minDeposit} ETH · Max {pool.maxDeposit} ETH per deposit
+                        </p>
+                    )}
+                    {showProblem && <p className="font-medium text-red-600">{problem}</p>}
+                </div>
 
                 <StatusBanner status={status} />
                 <PendingNotice pending={pending} onRetry={retryPending} busy={status.kind === "working"} />
