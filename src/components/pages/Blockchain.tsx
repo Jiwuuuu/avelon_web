@@ -2,7 +2,7 @@
 
 import { Blocks, Globe, Wallet, FileCode2, Database, Link2, AlertTriangle, RefreshCw } from "lucide-react"
 import { useCachedFetch } from "@/lib/use-cached-fetch"
-import { EXPLORER_BASE } from "@/config/chain";
+import { EXPLORER_BASE, HAS_EXPLORER } from "@/config/chain";
 
 type BlockchainData = {
     online: boolean
@@ -35,7 +35,8 @@ function AddressRow({ label, address }: { label: string; address: string | null 
     return (
         <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
             <span className="text-sm text-gray-500">{label}</span>
-            {address ? (
+            {/* The local chain has no block explorer, so its addresses get no link */}
+            {address && HAS_EXPLORER ? (
                 <a
                     href={etherscanLink("address", address)}
                     target="_blank"
@@ -45,6 +46,8 @@ function AddressRow({ label, address }: { label: string; address: string | null 
                     {truncateAddress(address)}
                     <Link2 size={13} />
                 </a>
+            ) : address ? (
+                <span className="text-sm font-mono text-gray-700">{truncateAddress(address)}</span>
             ) : (
                 <span className="text-sm text-gray-400">Not configured</span>
             )}
@@ -193,7 +196,7 @@ export default function Blockchain() {
                                 <div className="space-y-4">
                                     <div>
                                         <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Address</p>
-                                        {data.deployer.address ? (
+                                        {data.deployer.address && HAS_EXPLORER ? (
                                             <a
                                                 href={etherscanLink("address", data.deployer.address)}
                                                 target="_blank"
@@ -203,6 +206,8 @@ export default function Blockchain() {
                                                 {data.deployer.address}
                                                 <Link2 size={13} />
                                             </a>
+                                        ) : data.deployer.address ? (
+                                            <p className="text-sm font-mono text-gray-700 break-all">{data.deployer.address}</p>
                                         ) : (
                                             <p className="text-sm text-gray-400">Not available</p>
                                         )}
