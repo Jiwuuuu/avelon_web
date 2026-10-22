@@ -83,7 +83,8 @@ export default function Logs() {
       const result = await api.get<{ data: AuditLog[]; meta: Meta }>(`/api/v1/admin/audit-logs?${params}`)
       if (result.success && result.data) {
         setLogs(result.data.data ?? (result.data as unknown as AuditLog[]))
-        setMeta(result.data.meta ?? null)
+        // The list is data; the counts and pages sit beside it in meta
+        setMeta((result as { meta?: Meta }).meta ?? result.data.meta ?? null)
       } else {
         setError(result.message ?? "Failed to load logs")
       }

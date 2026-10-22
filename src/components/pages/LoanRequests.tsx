@@ -178,8 +178,10 @@ function RejectModal({
 
 // ── Main Component ─────────────────────────────────────────
 export default function LoanRequests() {
-  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: AdminLoan[] }>("/api/v1/admin/loans")
-  const loans = loansData?.loans ?? []
+  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: AdminLoan[]; serverTime?: string }>("/api/v1/admin/loans?limit=100")
+  const loans = useMemo(() => loansData?.loans ?? [], [loansData])
+  // The backend's clock follows a fast-forwarded demo chain; the browser's does not
+  const serverNow = loansData?.serverTime ? new Date(loansData.serverTime) : new Date()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | LoanStatus>("all")
   const [selectedLoan, setSelectedLoan] = useState<AdminLoan | null>(null)
@@ -341,7 +343,7 @@ export default function LoanRequests() {
                             </>
                           )}
                           {(() => {
-                            const action = followUpAction(loan)
+                            const action = followUpAction(loan, serverNow)
                             if (!action) return null
                             return (
                               <button

@@ -59,7 +59,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function Deposits() {
   // Borrower collateral
   const { data: loansData, loading: loansLoading, error: loansError, refresh: loansRefresh } =
-    useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans")
+    useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans?limit=100")
   const loans = loansData?.loans ?? []
   const stats = computeDepositStats(loans)
   const depositQueue = loans.filter(

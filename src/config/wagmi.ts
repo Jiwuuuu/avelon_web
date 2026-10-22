@@ -8,7 +8,7 @@ export const walletConnectMetadata = {
     name: 'Avelon',
     description: 'Decentralized Lending Platform',
     url: 'https://avelon.app',
-    icons: ['/favicon.ico'],
+    icons: ['/favicon.png'],
 };
 
 // Only Base Sepolia configured — prevents mainnet connections.

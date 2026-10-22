@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { UserRole } from "@/types";
+import { useUnreadCount } from "@/lib/use-unread-count";
 
 const nav = [
   { href: "/investor/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,6 +35,7 @@ export function InvestorPortalLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const unread = useUnreadCount();
 
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || user?.role !== UserRole.INVESTOR)) {
@@ -81,7 +83,12 @@ export function InvestorPortalLayout({ children }: { children: React.ReactNode }
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {href === "/investor/notifications" && unread > 0 && (
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#E85C1A] text-white text-[11px] font-semibold flex items-center justify-center">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -103,9 +110,23 @@ export function InvestorPortalLayout({ children }: { children: React.ReactNode }
           <div className="min-w-0">
             <p className="text-xs text-stone-500 truncate">{user.email}</p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-stone-600 bg-stone-100 rounded-full pl-3 pr-2 py-1.5">
-            <User className="h-3.5 w-3.5 text-[#E85C1A] shrink-0" />
-            <span className="truncate">{user.name || 'Investor'}</span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/investor/notifications"
+              className="relative p-2 rounded-full text-stone-600 hover:bg-stone-100"
+              aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+            >
+              <Bell className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E85C1A] text-white text-[10px] font-semibold flex items-center justify-center ring-2 ring-white">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </Link>
+            <div className="flex items-center gap-2 text-xs text-stone-600 bg-stone-100 rounded-full pl-3 pr-2 py-1.5">
+              <User className="h-3.5 w-3.5 text-[#E85C1A] shrink-0" />
+              <span className="truncate">{user.name || 'Investor'}</span>
+            </div>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">{children}</main>

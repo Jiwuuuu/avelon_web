@@ -7,14 +7,6 @@ import { useAuth } from '@/contexts/auth-context'
 import { UserRole } from '@/types'
 
 // ── Icons (inline SVG) ────────────────────────────────────────────────────
-const AvelonLogo = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <rect x="2" y="8" width="10" height="16" rx="1" fill="#E85C1A" />
-    <rect x="14" y="4" width="6" height="20" rx="1" fill="#E85C1A" opacity="0.6" />
-    <rect x="22" y="12" width="8" height="12" rx="1" fill="#E85C1A" opacity="0.35" />
-  </svg>
-)
-
 const IconGrid = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <rect x="1" y="1" width="6" height="6" rx="1" fill="#E85C1A" />
@@ -249,6 +241,11 @@ function LoginPageContent() {
 
                     {/* Links */}
                     <div style={{ textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+                        <p style={{ fontSize: 13 }}>
+                            <Link href="/forgot-password" style={{ color: "#E85C1A", fontWeight: 600, fontFamily: "'Sora', sans-serif", fontSize: 13, textDecoration: "none" }}>
+                                Forgot your password?
+                            </Link>
+                        </p>
                         <p style={{ fontSize: 13, color: "#9CA3AF" }}>
                             Don&apos;t have an account?{' '}
                             <Link href="/register" style={{ color: "#E85C1A", fontWeight: 600, fontFamily: "'Sora', sans-serif", fontSize: 13, textDecoration: "none" }}>

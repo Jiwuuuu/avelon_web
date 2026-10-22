@@ -1,7 +1,8 @@
 "use client";
 
-import { PieChart } from "lucide-react";
+import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
+import { PendingNotice, StatusBanner, usePoolAction, WalletNotice } from "@/components/investor/PoolAction";
 
 type EarningsData = {
   totalEarned: number;
@@ -9,17 +10,23 @@ type EarningsData = {
   monthlyBreakdown: { month: string; earned: number }[];
 };
 
-const PLATFORM_FEE = 10;
-
 export default function EarningsPage() {
-  const { data, loading, error } = useCachedFetch<EarningsData>("/api/v1/investor/earnings");
+  const { data, loading, error, refresh } = useCachedFetch<EarningsData>("/api/v1/investor/earnings");
+  const { status, run, ready, wallet, pending, retryPending } = usePoolAction();
 
   const total = data?.totalEarned ?? 0;
   const claimable = data?.claimable ?? 0;
   const monthly = data?.monthlyBreakdown ?? [];
+  const busy = status.kind === "working";
 
-  const gross = total > 0 ? total / (1 - PLATFORM_FEE / 100) : 0;
-  const platformCut = gross - total;
+  const claim = async () => {
+    await run({
+      action: "claim",
+      recordPath: "/api/v1/investor/claim-yield",
+      successMessage: "Yield claimed. Your deposited principal stays invested.",
+    });
+    refresh();
+  };
 
   // Chart: use monthly data or empty bars
   const bars = monthly.length > 0 ? monthly.map((m) => m.earned) : [];
@@ -29,7 +36,7 @@ export default function EarningsPage() {
     <div className="max-w-4xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Earnings and returns</h1>
-        <p className="text-stone-500 text-sm mt-1">Research-preview figures from recorded prototype data; not a claimable financial balance.</p>
+        <p className="text-stone-500 text-sm mt-1">What your shares have earned from borrowers' interest, read from the pool contract.</p>
       </div>
 
       {error && (
@@ -52,31 +59,14 @@ export default function EarningsPage() {
         </div>
         <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <PieChart className="h-5 w-5 text-[#E85C1A]" />
-            <p className="text-sm font-semibold text-stone-800">Fee breakdown</p>
+            <Info className="h-5 w-5 text-[#E85C1A]" />
+            <p className="text-sm font-semibold text-stone-800">Where the yield comes from</p>
           </div>
-          {loading ? (
-            <div className="space-y-2">
-              <div className="h-5 bg-stone-100 rounded animate-pulse" />
-              <div className="h-5 bg-stone-100 rounded animate-pulse" />
-              <div className="h-5 bg-stone-100 rounded animate-pulse" />
-            </div>
-          ) : (
-            <ul className="text-sm space-y-2 text-stone-600">
-              <li className="flex justify-between">
-                <span>Investor return (net)</span>
-                <span className="font-mono font-medium">{total.toFixed(6)} ETH</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Platform {PLATFORM_FEE}% fee (on yield)</span>
-                <span className="font-mono font-medium text-stone-500">~{platformCut.toFixed(6)} ETH</span>
-              </li>
-              <li className="flex justify-between border-t border-stone-100 pt-2 text-stone-800 font-medium">
-                <span>Gross yield</span>
-                <span className="font-mono">~{gross.toFixed(6)} ETH</span>
-              </li>
-            </ul>
-          )}
+          <ul className="text-sm space-y-2 text-stone-600 list-disc pl-5">
+            <li>Borrowers repay principal plus interest into the pool.</li>
+            <li>All of that interest, and every origination fee, stays in the pool and raises what each share is worth. Avelon takes no platform fee in this prototype.</li>
+            <li>A loan that defaults lowers every share; the borrower&apos;s seized stake goes back into the pool.</li>
+          </ul>
         </div>
       </div>
 
@@ -107,13 +97,25 @@ export default function EarningsPage() {
         </section>
       )}
 
-      <button
-        type="button"
-        disabled
-        className="px-6 py-3 rounded-xl bg-[#E85C1A] text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Yield claims unavailable — audited pool contract required
-      </button>
+      <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+        <div>
+          <h2 className="font-semibold text-stone-900">Claim your yield</h2>
+          <p className="text-sm text-stone-500 mt-1">
+            Takes only the gain and leaves your deposit invested. Unclaimed yield keeps compounding inside your shares.
+          </p>
+        </div>
+        <WalletNotice wallet={wallet} onLinked={refresh} />
+        <PendingNotice pending={pending} onRetry={retryPending} busy={busy} />
+        <StatusBanner status={status} />
+        <button
+          type="button"
+          onClick={claim}
+          disabled={!ready || busy || claimable <= 0}
+          className="px-6 py-3 rounded-xl bg-[#E85C1A] text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {busy ? "Waiting for your wallet…" : claimable > 0 ? `Claim ${claimable.toFixed(6)} ETH` : "Nothing to claim yet"}
+        </button>
+      </section>
     </div>
   );
 }

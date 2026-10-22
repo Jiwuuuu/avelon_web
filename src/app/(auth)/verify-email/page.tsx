@@ -4,6 +4,7 @@ import { useState, useRef, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { api } from '@/lib/api'
+import { errorMessage } from '@/lib/api-errors'
 
 // ── Icons ────────────────────────────────────────────────────────────────
 const IconGrid = () => (
@@ -34,6 +35,36 @@ function VerifyEmailContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [verified, setVerified] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const [resendIn, setResendIn] = useState(60)
+  const [resending, setResending] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  // The backend allows a new code once a minute
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendIn])
+
+  const resend = async () => {
+    if (!email || resendIn > 0) return
+    setResending(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const result = await api.post<{ message: string }>('/api/v1/auth/resend-verification', { email })
+      if (result.success) {
+        setNotice('A new code is on its way. Codes last 1 hour.')
+        setResendIn(60)
+      } else {
+        setError(errorMessage(result, 'Could not send a new code. Try again in a minute.'))
+      }
+    } catch {
+      setError('Could not send a new code. Try again in a minute.')
+    } finally {
+      setResending(false)
+    }
+  }
 
   // Auto-focus first input on mount
   useEffect(() => {
@@ -216,6 +247,14 @@ function VerifyEmailContent() {
           Check your inbox and enter the code below
         </p>
 
+        {notice && !error && (
+          <p role="status" style={{
+            fontSize: 13, color: "#166534", marginBottom: 12,
+            padding: "10px 14px", background: "#F0FDF4",
+            borderRadius: 10, border: "1px solid #BBF7D0",
+          }}>{notice}</p>
+        )}
+
         {error && (
           <p style={{
             fontSize: 13, color: "#B91C1C", marginBottom: 12,
@@ -285,6 +324,24 @@ function VerifyEmailContent() {
 
         {/* Links */}
         <div style={{ textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+          {email && (
+            <p style={{ fontSize: 13, color: "#9CA3AF" }}>
+              Didn&apos;t get it?{' '}
+              <button
+                type="button"
+                onClick={resend}
+                disabled={resending || resendIn > 0}
+                style={{
+                  background: "none", border: "none", padding: 0,
+                  color: resendIn > 0 ? "#9CA3AF" : "#E85C1A", fontWeight: 600,
+                  fontFamily: "'Sora', sans-serif", fontSize: 13,
+                  cursor: resending || resendIn > 0 ? "default" : "pointer",
+                }}
+              >
+                {resending ? "Sending…" : resendIn > 0 ? `Send a new code in ${resendIn}s` : "Send a new code"}
+              </button>
+            </p>
+          )}
           <p style={{ fontSize: 13, color: "#9CA3AF" }}>
             Already verified?{' '}
             <Link href="/login" style={{ color: "#E85C1A", fontWeight: 600, fontFamily: "'Sora', sans-serif", fontSize: 13, textDecoration: "none" }}>

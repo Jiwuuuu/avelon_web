@@ -360,9 +360,9 @@ function RegisterPageContent() {
           </p>
         </div>
         {[
-          { label: "Pool APY", value: "~8–12%" },
-          { label: "Platform Fee", value: "10%" },
-          { label: "Collateral Type", value: "ETH" },
+          { label: "Deposit range", value: "0.01–10 ETH" },
+          { label: "Platform fee", value: "None" },
+          { label: "Lock-up", value: "None" },
         ].map(({ label, value }) => (
           <div key={label} style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",

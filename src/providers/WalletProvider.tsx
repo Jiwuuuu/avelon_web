@@ -14,6 +14,8 @@ createAppKit({
     networks,
     defaultNetwork: appChain,
     metadata: walletConnectMetadata,
+    // Reown's usage telemetry; nothing in Avelon reads it
+    features: { analytics: false },
 });
 
 const queryClient = new QueryClient();

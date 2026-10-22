@@ -5,17 +5,12 @@ import type { FormEvent } from "react"
 import { ShieldCheck, KeyRound, Loader2, CheckCircle, AlertTriangle, X, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
+import { PASSWORD_RULES } from "@/lib/password-rules"
+import { errorMessage } from "@/lib/api-errors"
 
-const PASSWORD_RULES = [
-  { label: "At least 8 characters", test: (v: string) => v.length >= 8 },
-  { label: "One uppercase letter", test: (v: string) => /[A-Z]/.test(v) },
-  { label: "One lowercase letter", test: (v: string) => /[a-z]/.test(v) },
-  { label: "One number", test: (v: string) => /[0-9]/.test(v) },
-  { label: "One special character", test: (v: string) => /[^A-Za-z0-9]/.test(v) },
-]
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState("")
@@ -75,16 +70,14 @@ export default function Settings() {
         newPassword: newPwd,
       })
       if (result.success) {
-        setFormSuccess("Password changed successfully!")
+        // The backend ends every session on a password change, this one included
+        setFormSuccess("Password changed. Signing you out so you can sign in with the new one…")
         form.reset()
         setNewPassword("")
         setConfirmPassword("")
-        setTimeout(() => {
-          setIsPasswordModalOpen(false)
-          resetForm()
-        }, 1500)
+        setTimeout(() => { void logout() }, 2000)
       } else {
-        setFormError((result as unknown as { error?: string }).error ?? "Failed to change password.")
+        setFormError(errorMessage(result, "Failed to change password."))
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to change password. Check your current password."

@@ -1,4 +1,4 @@
-import { X, Trash2 } from "lucide-react"
+import { X, Trash2, Pencil } from "lucide-react"
 import { type LoanPlan, InterestType } from "@/types"
 import { getTier } from "@/lib/loan-plans"
 
@@ -7,9 +7,10 @@ interface PlanDetailModalProps {
   onClose: () => void
   onDeactivate: (planId: string) => void
   onDelete: (planId: string) => void
+  onEdit: (plan: LoanPlan) => void
 }
 
-export function PlanDetailModal({ plan, onClose, onDeactivate, onDelete }: PlanDetailModalProps) {
+export function PlanDetailModal({ plan, onClose, onDeactivate, onDelete, onEdit }: PlanDetailModalProps) {
   const tier = getTier(plan.maxAmount)
 
   return (
@@ -66,6 +67,14 @@ export function PlanDetailModal({ plan, onClose, onDeactivate, onDelete }: PlanD
 
           <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-4">
             <button type="button" onClick={onClose} className="text-sm font-medium text-gray-600 hover:text-gray-900">Close</button>
+            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onEdit(plan)}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              <Pencil size={18} /> Edit Plan
+            </button>
             {plan.isActive ? (
               <button
                 type="button"
@@ -83,6 +92,7 @@ export function PlanDetailModal({ plan, onClose, onDeactivate, onDelete }: PlanD
                 <Trash2 size={18} /> Delete Plan
               </button>
             )}
+            </div>
           </div>
         </div>
       </div>

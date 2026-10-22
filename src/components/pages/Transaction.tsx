@@ -16,11 +16,13 @@ const inflowTypes = new Set([
   LoanTransactionType.COLLATERAL_DEPOSIT,
   LoanTransactionType.COLLATERAL_TOPUP,
   LoanTransactionType.REPAYMENT,
+  // A seized stake is paid into the pool
+  LoanTransactionType.LIQUIDATION,
 ])
 
 export default function Transaction() {
   const { data: txData, loading, error, refresh } = useCachedFetch<{ transactions: LoanTransaction[] }>("/api/v1/admin/transactions")
-  const transactions = txData?.transactions ?? []
+  const transactions = useMemo(() => txData?.transactions ?? [], [txData])
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
 
