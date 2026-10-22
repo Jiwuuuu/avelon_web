@@ -16,6 +16,8 @@ import {
     ScrollText,
     Blocks,
     Activity,
+    ShieldCheck,
+    FlaskConical,
     X,
 } from 'lucide-react'
 import Image from 'next/image'
@@ -34,6 +36,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, userName, i
     const menuItems = [
         { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
         { id: 'users', icon: Users, label: 'Users' },
+        { id: 'kyc', icon: ShieldCheck, label: 'KYC Review' },
         { id: 'loan-plans', icon: FileText, label: 'Loan Plans' },
         { id: 'loan-requests', icon: GitPullRequest, label: 'Loan Requests' },
         { id: 'payment-history', icon: Clock, label: 'Payment History' },
@@ -46,6 +49,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, userName, i
         { id: 'completed-loans', icon: CheckCircle, label: 'Completed Loans' },
         { id: 'notifications', icon: Bell, label: 'Notifications' },
         { id: 'logs', icon: ScrollText, label: 'Logs' },
+        { id: 'demo', icon: FlaskConical, label: 'Demo Controls' },
     ]
 
     const handleNav = (page: string) => {

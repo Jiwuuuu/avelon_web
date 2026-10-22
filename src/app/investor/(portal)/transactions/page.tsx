@@ -52,7 +52,7 @@ export default function TransactionsPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  const allTx = data?.transactions ?? [];
+  const allTx = useMemo(() => data?.transactions ?? [], [data]);
 
   const filtered = useMemo(() => {
     return allTx.filter((r) => {

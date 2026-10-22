@@ -240,7 +240,7 @@ function UserDetailsModal({
           </div>
         ) : null}
 
-        {/* Footer Actions — only Suspend/Unsuspend, NO approve/reject (KYC is AI-only) */}
+        {/* Footer Actions — KYC decisions live on the KYC Review page */}
         <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
           <p className="text-sm text-gray-500">User ID: {user.id}</p>
           {user.status === UserStatus.SUSPENDED ? (
@@ -331,7 +331,7 @@ const ITEMS_PER_PAGE = 10
 
 export default function Users() {
   const { data: usersData, loading, error, refresh, invalidate } = useCachedFetch<{ users: UserProfile[] }>("/api/v1/admin/users")
-  const users = usersData?.users ?? []
+  const users = useMemo(() => usersData?.users ?? [], [usersData])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | UserStatus>("all")
   const [currentPage, setCurrentPage] = useState(1)

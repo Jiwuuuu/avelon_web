@@ -76,7 +76,8 @@ export default function Notifications() {
       const result = await api.get<{ data: Notification[]; meta: Meta }>(`/api/v1/admin/notifications?${params}`)
       if (result.success && result.data) {
         setNotifications(result.data.data ?? (result.data as unknown as Notification[]))
-        setMeta(result.data.meta ?? null)
+        // The list is data; the counts and pages sit beside it in meta
+        setMeta((result as { meta?: Meta }).meta ?? result.data.meta ?? null)
       } else {
         setError(result.message ?? "Failed to load notifications")
       }

@@ -28,8 +28,8 @@ function StatusBadge({ status }: { status: LoanStatus }) {
 }
 
 export default function PaymentHistory() {
-  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans")
-  const loans = loansData?.loans ?? []
+  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans?limit=100")
+  const loans = useMemo(() => loansData?.loans ?? [], [loansData])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"ALL" | LoanStatus>("ALL")
 

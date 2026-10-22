@@ -13,11 +13,12 @@ import {
 
 export default function LoanPlans() {
   const { data: plansData, loading, error, refresh, invalidate } = useCachedFetch<{ plans: LoanPlan[] }>("/api/v1/admin/plans")
-  const plans = plansData?.plans ?? []
+  const plans = useMemo(() => plansData?.plans ?? [], [plansData])
 
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null)
+  const [editingPlan, setEditingPlan] = useState<LoanPlan | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortOption, setSortOption] = useState("newest")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
@@ -257,6 +258,18 @@ export default function LoanPlans() {
           onClose={() => setSelectedPlan(null)}
           onDeactivate={handleDeactivateFromDetail}
           onDelete={handleDeleteFromDetail}
+          onEdit={(plan) => { setSelectedPlan(null); setEditingPlan(plan) }}
+        />
+      )}
+
+      {editingPlan && (
+        <CreatePlanModal
+          plan={editingPlan}
+          onClose={() => setEditingPlan(null)}
+          onSuccess={(msg) => setToast({ type: "success", message: msg })}
+          onError={(msg) => setToast({ type: "error", message: msg })}
+          invalidate={invalidate}
+          refresh={refresh}
         />
       )}
     </div>

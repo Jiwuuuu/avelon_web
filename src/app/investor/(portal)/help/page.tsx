@@ -6,15 +6,23 @@ import { useState } from "react";
 const FAQ = [
   {
     q: "How does the liquidity pool work?",
-    a: "You deposit supported assets into a shared pool. Borrowers draw from that pool under smart-contract rules; interest flows back to LPs after the platform fee.",
+    a: "You deposit ETH into a shared pool and receive shares. Approved borrowers are paid out of the pool, and their repayments flow back in. Interest raises the value of every share, so your shares grow as loans are repaid.",
   },
   {
-    q: "What is the 10% platform fee?",
-    a: "Avelon retains 10% of interest revenue to operate the protocol. It is not taken from your principal deposit.",
+    q: "Is there a platform fee?",
+    a: "No. In this prototype all borrower interest and origination fees stay in the pool for investors. Avelon takes nothing from your deposit or your yield.",
+  },
+  {
+    q: "Is my return guaranteed?",
+    a: "No. You earn only when borrowers repay. If a loan defaults, the loss lowers every share, partly offset by the borrower's seized stake, which goes back into the pool.",
   },
   {
     q: "When can I withdraw?",
-    a: "You can initiate withdrawals subject to pool liquidity and any lock rules enforced by the contract. The Withdraw page shows your withdrawable balance.",
+    a: "Any time, with no lock-up, up to the ETH sitting idle in the pool. ETH lent to borrowers comes back as they repay. The Withdraw page shows what you can take out right now.",
+  },
+  {
+    q: "Do I have to claim my yield?",
+    a: "No. Unclaimed yield keeps compounding inside your shares. Claiming takes only the gain and leaves your deposit invested.",
   },
   {
     q: "Where do I see my transactions?",
@@ -58,8 +66,8 @@ export default function HelpPage() {
         <h2 className="text-sm font-semibold text-stone-800 uppercase tracking-wide mb-4">How to invest</h2>
         <ol className="list-decimal list-inside space-y-3 text-sm text-stone-600 leading-relaxed">
           <li>Create an account or sign in, then connect a compatible wallet.</li>
-          <li>Open <strong className="text-stone-800">Invest / Deposit</strong>, choose a token, and enter an amount.</li>
-          <li>Review estimated pool share, expected yield (after fees), and confirm in your wallet.</li>
+          <li>Link your wallet with a free signature, then open <strong className="text-stone-800">Invest / Deposit</strong> and enter an amount between 0.01 and 10 ETH.</li>
+          <li>Confirm the deposit in your wallet. Your shares appear once the pool records it.</li>
           <li>Track activity under <strong className="text-stone-800">Transactions</strong> and returns under <strong className="text-stone-800">Earnings</strong>.</li>
         </ol>
       </section>

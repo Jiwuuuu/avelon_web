@@ -269,7 +269,7 @@ export default function HomePage() {
 
             {/* Feature badges */}
             <motion.div {...fadeUp(0.28)} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {["Audited Smart Contracts", "10% Platform Fee", "Real-Time Earnings"].map(label => (
+              {["Self-Custody Deposits", "No Platform Fee", "Real-Time Earnings"].map(label => (
                 <div key={label} style={{
                   display: "flex", alignItems: "center", gap: 8,
                   background: C.white, border: `1.5px solid ${C.border}`,
@@ -366,8 +366,9 @@ export default function HomePage() {
                 color: C.textDim, lineHeight: 1.8, maxWidth: 480, marginBottom: 32,
               }}>
                 Avelon is a decentralized lending protocol connecting liquidity providers
-                with borrowers through secure, audited smart contracts on the Ethereum
-                Base Sepolia network. AI-powered KYC ensures every borrower is verified.
+                with borrowers through open-source smart contracts on the Base Sepolia
+                test network. Every borrower passes AI-assisted identity checks and an
+                administrator approves every loan.
               </motion.p>
               <motion.div {...fadeUp(0.2)}>
                 <Link href="/register" style={{
@@ -388,8 +389,8 @@ export default function HomePage() {
               {[
                 { label: "Collateral Type", value: "ETH" },
                 { label: "Network", value: "Base Sepolia" },
-                { label: "Platform Fee", value: "10%" },
-                { label: "Revenue Split", value: "90 / 10" },
+                { label: "Platform Fee", value: "None" },
+                { label: "Interest to Investors", value: "100%" },
               ].map(({ label, value }) => (
                 <div key={label} style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",

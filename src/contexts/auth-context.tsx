@@ -16,7 +16,6 @@ import {
     getStoredUser,
     clearTokens,
     type SessionUser,
-    type LoginResponse,
 } from '@/lib/api';
 
 interface AuthContextType {

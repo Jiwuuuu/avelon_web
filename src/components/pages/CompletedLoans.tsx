@@ -5,7 +5,7 @@ import { useCachedFetch } from "@/lib/use-cached-fetch"
 import { CompletedLoansSkeleton } from "@/components/skeletons"
 
 export default function CompletedLoans() {
-  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans?status=REPAID")
+  const { data: loansData, loading, error, refresh } = useCachedFetch<{ loans: Loan[] }>("/api/v1/admin/loans?status=REPAID&limit=100")
   const loans = loansData?.loans ?? []
 
   // Stats
