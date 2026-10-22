@@ -79,7 +79,7 @@ export default function Notifications() {
         // The list is data; the counts and pages sit beside it in meta
         setMeta((result as { meta?: Meta }).meta ?? result.data.meta ?? null)
       } else {
-        setError(result.message ?? "Failed to load notifications")
+        setError(result.error ?? result.message ?? "Failed to load notifications")
       }
     } catch {
       setError("Failed to connect to server")
