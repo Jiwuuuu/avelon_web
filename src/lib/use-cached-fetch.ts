@@ -46,7 +46,8 @@ export function useCachedFetch<T>(url: string, staleMs = 30_000) {
           cache.set(key, { data: result.data, fetchedAt: Date.now() })
           setData(result.data)
         } else {
-          setError(result.message ?? "Request failed")
+          // The API client puts the server's readable message in error, not message
+          setError(result.error ?? result.message ?? "Request failed")
         }
       } catch {
         setError("Failed to connect to server")

@@ -98,7 +98,7 @@ export default function LoanPlans() {
         setToast({ type: "success", message: `"${planName}" has been permanently deleted.` })
       } else {
         setDeleteConfirm(null)
-        setToast({ type: "error", message: result.message ?? "Cannot delete plan." })
+        setToast({ type: "error", message: result.error ?? result.message ?? "Cannot delete plan." })
       }
     } catch {
       setDeleteConfirm(null)

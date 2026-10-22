@@ -86,7 +86,7 @@ export default function Logs() {
         // The list is data; the counts and pages sit beside it in meta
         setMeta((result as { meta?: Meta }).meta ?? result.data.meta ?? null)
       } else {
-        setError(result.message ?? "Failed to load logs")
+        setError(result.error ?? result.message ?? "Failed to load logs")
       }
     } catch {
       setError("Failed to connect to server")
