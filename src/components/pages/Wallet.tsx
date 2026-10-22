@@ -176,7 +176,8 @@ export default function Wallet() {
                 <div className="text-center py-8 text-gray-500">No price history available.</div>
               ) : (
                 <div className="space-y-3">
-                  {history.slice(0, 14).map((entry) => (
+                  {/* The API returns oldest first; show the latest 14, newest on top */}
+                  {history.slice(-14).reverse().map((entry) => (
                     <div key={entry.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
                       <span className="text-sm text-gray-600">{new Date(entry.createdAt).toLocaleString()}</span>
                       <span className="text-sm font-semibold text-gray-900">₱{Number(entry.ethPricePHP).toLocaleString()}</span>

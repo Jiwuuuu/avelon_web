@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { useCachedFetch } from "@/lib/use-cached-fetch";
-import { ConnectNotice, PendingNotice, StatusBanner, usePoolAction } from "@/components/investor/PoolAction";
+import { PendingNotice, StatusBanner, usePoolAction, WalletNotice } from "@/components/investor/PoolAction";
 
 type Position = {
     shares: number;
@@ -16,7 +16,7 @@ type Position = {
 
 export default function WithdrawPage() {
     const { data: position, loading, error, refresh } = useCachedFetch<Position>("/api/v1/investor/position");
-    const { status, run, isConnected, pending, retryPending } = usePoolAction();
+    const { status, run, ready, wallet, pending, retryPending } = usePoolAction();
     const [shares, setShares] = useState("");
 
     const busy = status.kind === "working";
@@ -93,11 +93,11 @@ export default function WithdrawPage() {
                     Takes out what you have earned above your deposit and leaves the deposit invested. Doing nothing
                     compounds it instead — unclaimed yield is already inside your shares.
                 </p>
-                <ConnectNotice isConnected={isConnected} />
+                <WalletNotice wallet={wallet} onLinked={refresh} />
                 <button
                     type="button"
                     onClick={claim}
-                    disabled={!isConnected || busy || (position?.claimableYield ?? 0) <= 0}
+                    disabled={!ready || busy || (position?.claimableYield ?? 0) <= 0}
                     className="w-full rounded-xl border border-stone-900 py-3 text-sm font-semibold text-stone-900 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400"
                 >
                     {(position?.claimableYield ?? 0) > 0
@@ -141,7 +141,7 @@ export default function WithdrawPage() {
                 <button
                     type="button"
                     onClick={withdraw}
-                    disabled={!isConnected || !valid || busy}
+                    disabled={!ready || !valid || busy}
                     className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
                 >
                     {busy ? "Working…" : "Withdraw"}
